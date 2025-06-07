@@ -39,7 +39,7 @@ export default function Dashboard() {
         const userId = localStorage.getItem('user_id') || undefined;
         const clientId = localStorage.getItem('client_id') || undefined;
         const stats = await apiService.getDashboardStats(userId, clientId);
-        setDashboardStats(stats);
+        setDashboardStats(stats || null);
         
         setError(null);
       } catch (err) {

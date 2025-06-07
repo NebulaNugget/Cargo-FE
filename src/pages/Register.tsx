@@ -139,7 +139,7 @@ export default function Register() {
         </div>
         
         <div className="text-center">
-          <h1 className="text-xl font-bold text-blue-500">CARBONATION CO-PILOT</h1>
+          <h1 className="text-xl font-bold text-blue-500">CARGONATION CO-PILOT</h1>
         </div>
       </div>
 
@@ -627,7 +627,7 @@ export default function Register() {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-500">
-          &copy; {new Date().getFullYear()} Carbonation Co-Pilot. All rights reserved.
+          &copy; {new Date().getFullYear()} CarGonation Co-Pilot. All rights reserved.
         </p>
       </div>
     </div>

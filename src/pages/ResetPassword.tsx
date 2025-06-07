@@ -77,7 +77,7 @@ export default function ResetPassword() {
           
           {/* Brand Name */}
           <h1 className="text-2xl text-center mb-3 leading-tight font-medium">
-            CARBONATION
+            CARGONATION
             <br />
             <span className="text-white font-bold">CO-PILOT</span>
           </h1>
@@ -108,7 +108,7 @@ export default function ResetPassword() {
                 </g>
               </svg>
             </div>
-            <h1 className="text-lg font-bold text-blue-500">CARBONATION CO-PILOT</h1>
+            <h1 className="text-lg font-bold text-blue-500">CARGONATION CO-PILOT</h1>
           </div>
 
           {/* Back to Login */}
@@ -213,7 +213,7 @@ export default function ResetPassword() {
           {/* Footer */}
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              © 2025 Carbonation Co Pilot. All rights reserved.
+              © 2025 CarGonation Co Pilot. All rights reserved.
             </p>
           </div>
         </div>

@@ -75,7 +75,7 @@ export default function Navigation({ children }: NavigationProps) {
           </svg>
         </div>
          <div className="text-center">
-          <h1 className="text-md mt-5 mr-2 font-bold text-blue-500">CARBONATION CO-PILOT</h1>
+          <h1 className="text-md mt-5 mr-2 font-bold text-blue-500">CARGONATION CO-PILOT</h1>
         </div>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function Navigation({ children }: NavigationProps) {
           <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-md mr-2">
             <Shield className="w-5 h-5 text-white" />
           </div>
-          <span className="text-sm font-medium text-gray-700">Carbonation Co-Pilot</span>
+          <span className="text-sm font-medium text-gray-700">CarGonation Co-Pilot</span>
         </div>
       </div>
     </div>
@@ -159,7 +159,7 @@ export default function Navigation({ children }: NavigationProps) {
           </svg>
         </div>
               <div className="text-center">
-          <h1 className="text-xl font-bold text-blue-500 mt-5 ml-2">CARBONATION CO-PILOT</h1>
+          <h1 className="text-xl font-bold text-blue-500 mt-5 ml-2">CARGONATION CO-PILOT</h1>
         </div>
                 {clientName && (
                   <div className="px-3 py-1 bg-blue-50 rounded-lg border mt-5 mr-7 border-blue-100">

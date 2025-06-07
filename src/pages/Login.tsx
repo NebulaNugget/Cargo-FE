@@ -61,7 +61,7 @@ export default function Login() {
           
           {/* Brand Name */}
           <h1 className="text-2xl text-center mb-3 leading-tight font-medium">
-            CARBONATION
+            CARGONATION
             <br />
             <span className="text-white font-bold">CO-PILOT</span>
           </h1>
@@ -92,7 +92,7 @@ export default function Login() {
                 </g>
               </svg>
             </div>
-            <h1 className="text-lg font-bold text-blue-500">CARBONATION CO-PILOT</h1>
+            <h1 className="text-lg font-bold text-blue-500">CARGONATION CO-PILOT</h1>
           </div>
 
           {/* Login Card */}
@@ -201,7 +201,7 @@ export default function Login() {
             {/* Sign Up Link */}
             <div className="mt-5 text-center">
               <p className="text-sm text-gray-600">
-                New to Carbonation Co Pilot?{' '}
+                New to CarGonation Co Pilot?{' '}
                 <a href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
                   Sign Up?
                 </a>
@@ -212,7 +212,7 @@ export default function Login() {
           {/* Footer */}
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">
-              © 2025 Carbonation Co Pilot. All rights reserved.
+              © 2025 CarGonation Co Pilot. All rights reserved.
             </p>
           </div>
         </div>

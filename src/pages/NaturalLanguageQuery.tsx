@@ -540,7 +540,9 @@ const pollTaskStatus = (taskId: string, messageId: string, userMessageId: string
         
         // Update the message with the result
         setMessages((prev: Message[]) => prev.map((msg: Message) => {
-          if (msg.id === messageId) {
+         console.log('check')
+          console.log(msg, result.id, messageId)
+          if (msg.taskData?.id === result.id) {
             return {
               ...msg,
               text: responseText,
@@ -605,7 +607,7 @@ const pollTaskStatus = (taskId: string, messageId: string, userMessageId: string
         ? { ...msg, taskId: response.task_id } 
         : msg
     ));
-    
+    console.log(messages)
       // Generate a message ID for the AI response
       const aiMessageId = (Date.now() + 1).toString();
       
