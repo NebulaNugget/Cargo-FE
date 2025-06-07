@@ -1,0 +1,704 @@
+## 1. Scope of Work
+
+The Contractor agrees to deliver the AI-powered CargoWise automation
+platform in accordance with the detailed phase breakdown in Schedule A.\
+Each phase includes testing, delivery through GitHub, and confirmation
+by the Client before acceptance. The Client will validate completion and
+instruct the next phase.
+
+## 2. Compensation
+
+The total compensation shall be USD \$420, paid in USDT or ETH, split as
+follows:\
+- Phase 1: \$100\
+- Phase 2: \$120\
+- Phase 3: \$100\
+- Phase 4: \$100\
+\
+Payment is released within three (3) business days after: (1) delivery
+on GitHub, (2) successful testing, and (3) written or GitHub-based
+approval.\
+\
+All deliverables, including source code, documentation, and automation
+scripts, must be committed to the Client's designated GitHub repository.
+Each commit must be descriptive and associated with a specific project
+phase. Version control must be strictly maintained throughout the
+engagement.\
+\
+Continuous Integration and Continuous Deployment (CI/CD) will be used to
+validate each phase of work. Testing suites shall include pytest for
+backend validation, and Robot Framework for automation flows. These
+tests will be triggered via GitHub Actions or an agreed CI/CD pipeline,
+and all phases must pass automated validation before final approval and
+payment.
+
+## 3. Intellectual Property
+
+All deliverables --- including code, documents, workflows, and trained
+models --- are "work for hire" and property of the Client. The
+Contractor assigns all rights, title, and interest to the Client
+permanently.
+
+## 4. Confidentiality
+
+The Contractor agrees not to disclose or use any confidential
+information, materials, credentials, or methods shared by the Client for
+any purpose other than fulfilling this Agreement. This obligation
+survives five (5) years beyond termination.
+
+## 5. Non-Compete and Non-Solicitation
+
+For twelve (12) months after the final phase, the Contractor may not:
+(1) build or sell similar automation systems derived from this project,
+(2) solicit the Client's clients, investors, or staff, directly or
+indirectly.
+
+## 6. Data Handling and Return
+
+Upon completion or termination, the Contractor shall return or delete
+all materials and access credentials provided by the Client.
+Confirmation of deletion shall be provided upon request.
+
+## 7. Post-Delivery Support
+
+Each phase includes up to five (5) hours of post-delivery support for
+bug fixes or clarifications within 14 days of acceptance.
+
+## 8. Breach and Remedies
+
+If the Contractor breaches confidentiality, IP, or delivery terms, the
+Client may terminate this Agreement immediately and pursue legal or
+financial remedies, including reimbursement for damages.
+
+## 9. Termination
+
+This Agreement may be terminated with fourteen (14) days' written
+notice. The Client may terminate immediately in case of material breach.
+All accepted work will be paid in full.
+
+## 10. Survival of Terms
+
+Clauses relating to intellectual property, confidentiality, non-compete,
+breach, and dispute resolution survive the end of the contract.
+
+## 11. Entire Agreement
+
+This Agreement, including Schedule A, constitutes the entire
+understanding between the Parties. Amendments must be made in writing
+and signed by both Parties.
+
+# 
+
+# Schedule A -- Project Proposal
+
+Title: AI-Powered CargoWise Automation Platform
+
+Payment: Fixed-price per phase (paid in cryptocurrency: USDT or ETH)
+
+Overview:
+
+This proposal outlines a detailed four-phase development plan for
+building an open-source, AI-powered operator-style automation platform
+for CargoWise. The system is designed to function as a copilot, not a
+fully autonomous AI. It blends LLM intelligence with human oversight to
+meet the practical demands of enterprise clients.
+
+Due to the nature of commercial-grade use cases, even a 90--95% accuracy
+rate is not sufficient without human validation. Therefore, this
+platform is architected from Phase 1 to include human-in-the-loop (HITL)
+capabilities: the ability to pause, approve, edit, or reject
+AI-predicted actions before execution. Over time, as the model improves
+(Phase 5), reliance on human supervision will decrease. The platform
+will support both browser-based and desktop-based automation, natural
+language interaction, and live visual streaming of workflows. At its
+core, the system is designed around an LLM-centric architecture, where
+the language model serves as the orchestrator --- interpreting user
+instructions, selecting the right automation tool, and executing tasks
+via a modular framework using LangChain.
+
+PHASES, TIMELINE & PRICING
+
+Phase 1: Core Framework + MVP (5--6 days, \$100)
+
+\- Multi-user architecture and client-specific RAG isolation
+
+\- FastAPI backend with trigger/log/checkpoint endpoints
+
+\- Human-in-the-loop (HITL) workflow control
+
+\- Permissions for auto-execute vs manual review
+
+\- Docker containerization
+
+\- LangChain routing, Playwright browser automation
+
+\- CargoWise desktop automation via Robot Framework + SikuliX
+
+\- React.js + Ant Design dashboard and logging
+
+Phase 2: Live Streaming + Workflow Expansion (6--7 days, \$120)
+
+\- Paused workflows with approve/edit/reject UI
+
+\- Per-task action controls: pause, resume, go back
+
+\- Confidence threshold-based HITL triggers
+
+\- VNC via Xvfb + TigerVNC + noVNC viewer embedded in dashboard
+
+\- 3--5 new LangChain-routed browser and desktop workflows
+
+\- Frontend error/success status indicators
+
+Phase 3: AI Integration (6--7 days, \$100)
+
+\- LangChain agent using Meta LLaMA 3
+
+\- Prompt-to-intent mapping with business context
+
+\- Fine-tune LLaMA 3 using PEFT (LoRA) with feedback loop
+
+\- Chat-style interface, real-time interaction, session logging
+
+Phase 4: Optimization + Scalability (6--7 days, \$100)
+
+\- Multi-tenant support, onboarding tools, workflow-level HITL config
+
+\- Optional RAG agent integration
+
+\- User login, session persistence, access roles
+
+\- Task history, filter/search, Ant Design enhancements
+
+\- Complete documentation, API specs, and deployment guide
+
+TOTAL: \$420 (23--27 days)
+
+Future Phase 5 -- Continuous Improvement Layer (Preparation Only)
+
+(Not in current scope. Foundation built across Phases 1--4)
+
+\- Logging of LLM decisions, session metadata
+
+\- Flagging and feedback loop for future tuning via Hugging Face
+AutoTrain
+
+Technology Stack:
+
+\- Backend: Python, FastAPI, Docker, JWT
+
+\- Browser: Playwright
+
+\- Desktop: Robot Framework, SikuliX, PyAutoGUI
+
+\- Streaming: Xvfb, TigerVNC, noVNC
+
+\- LLM: LangChain, Hugging Face, Meta LLaMA 3, PEFT (LoRA)
+
+\- Frontend: React.js, Ant Design
+
+Payment Terms:
+
+\- Fixed payment per completed phase
+
+\- Cryptocurrency (USDT or ETH)
+
+\- GitHub delivery required for approval
+
+Testing and Delivery:
+
+\- pytest + Robot Framework for backend and automation testing
+
+\- GitHub pull requests for review and milestone validation
+
+\- Secure streaming via VNC token auth
+
+\- Optional Docker-based CI/CD via GitHub Actions
+
+All deliverables, including source code, documentation, and automation
+scripts, must be committed to the Client's designated GitHub repository.
+Each commit must be descriptive and associated with a specific project
+phase. Version control must be strictly maintained throughout the
+engagement.\
+\
+Continuous Integration and Continuous Deployment (CI/CD) will be used to
+validate each phase of work. Testing suites shall include pytest for
+backend validation, and Robot Framework for automation flows. These
+tests will be triggered via GitHub Actions or an agreed CI/CD pipeline,
+and all phases must pass automated validation before final approval and
+payment.
+
+Core Architectural Principle: LLM as the Central Brain
+
+The LLM should be positioned as the central decision-making engine ---
+the 'brain' of the entire system. Its primary role is to interpret
+natural language instructions, determine the correct workflow or
+automation tool to use, and orchestrate those modules dynamically.
+Whether it\'s a desktop automation (SikuliX), a browser task
+(Playwright), or API-level action --- the LLM decides what happens,
+when, and how.
+
+This is not a huge change to the phases you\'ve scoped --- more a
+reinforcement of how the intelligence layer fits across the whole
+platform. I want to make sure we train the model in a way that it
+understands the workflows, business intent, and how to construct
+commands to drive the tools appropriately.
+
+Chosen LLM Model & Continuous Training Strategy
+
+To support this architecture, we'll use the following open-source models
+and tools:
+
+\- \*\*Base Model\*\*: LLaMA 3 (open variant), licensed and hosted on
+Hugging Face.\
+https://huggingface.co/meta-llama/Meta-Llama-3-8B
+
+\- \*\*Fine-Tuning Method\*\*: PEFT (Parameter-Efficient Fine-Tuning)
+with LoRA adapter layers.\
+https://github.com/huggingface/peft
+
+\- \*\*Training Framework\*\*: Hugging Face AutoTrain for managed
+fine-tuning and feedback ingestion.\
+https://huggingface.co/autotrain
+
+\- \*\*LangChain Integration\*\*: To manage tool routing and structured
+output parsing.\
+https://docs.langchain.com/docs/integrations/providers/huggingface
+
+Continuous Improvement Pipeline
+
+The LLM will be refined continuously based on real-world usage. Each
+interaction can optionally be logged as part of a training dataset,
+allowing us to periodically fine-tune the model to improve performance
+over time. This makes the platform adaptive and smarter with every
+iteration.
+
+Key steps:
+
+\- Log task requests, inputs, failures, and outputs.
+
+\- Store feedback as training data.
+
+\- Use AutoTrain jobs to re-fine-tune LLaMA model periodically.
+
+Why This Matters
+
+Again, this isn't a major shift in direction, but rather a
+clarification. I just wanted to be sure we frame the LLM as the
+orchestrator early so that the design decisions (especially data flow,
+logging, and module abstraction) reflect this going forward.
+
+Why This Architecture Matters Long-Term
+
+The reason I want to structure it this way --- with the LLM acting as
+the core orchestrator --- is because this isn\'t just a one-off build.
+While CargoWise is our first major client asking for this kind of
+AI-driven automation, the intention is to create a reusable foundation:
+a base model that we can iterate on for different clients and verticals.
+
+Once we've trained and completed the first implementation on CargoWise
+workflows, that base model will serve as the core logic engine. Then,
+when a new client comes along and says, \'We want to train this on
+marketing workflows,\' or \'We need this to handle outbound lead gen and
+client messaging,\' we can fork or adapt the base system quickly. We
+just update the RAG layer, tailor the workflow instructions, and roll
+out a specialized assistant without retraining from scratch.
+
+So the architectural decision isn't just technical --- it's strategic.
+It positions us to rapidly spin up custom assistants for different
+industries while maintaining a single, continuously improving core
+model.
+
+From the research and comparisons we\'ve done so far, \*\*LLaMA 3 (open
+variant)\*\* appears to be the best fit in terms of performance,
+community support, and extensibility. That said, if you have a preferred
+model, training framework, or continuous improvement setup that works
+better (especially within the Hugging Face ecosystem), feel free to
+propose it.
+
+I'm happy to adapt --- as long as we stick to the core principle of an
+LLM-centric, modular system that's easy to fork and scale.
+
+Let me know what you think --- looking forward to your thoughts.
+
+# Phase 5 -- Continuous Improvement (Optional, Future Phase)
+
+Although not part of the current development contract, the long-term
+plan is to enable continuous improvement through fine-tuning and
+feedback integration. To prepare for this future Phase 5, I'd like you
+to quietly lay the groundwork now so that we can plug this in later
+without needing to rebuild anything.
+
+Specifically, please include the following as part of Phases 1--4:
+
+-   \- Log each LLM request: raw prompt, interpreted intent, selected
+    tool, timestamp
+
+-   \- Log outcome/result: success, failure, partial outcome, and tool
+    output summary
+
+-   \- Add optional user feedback prompt after execution (e.g., \'Did
+    this task complete correctly?\')
+
+-   \- Capture version of prompt template or agent logic used
+
+-   \- Add \'Mark for Review\' flag option for users to flag tasks for
+    model refinement
+
+-   \- Store all this in a structured format (e.g. JSON or database row)
+    for easy export later
+
+# Why This All Matters for Long-Term Architecture
+
+This design ensures that we are building for scale and modularity ---
+not just for the CargoWise use case, but for a future where this LLM
+system can be retrained, repurposed, and reused across industries.
+LangChain is essential to this strategy, serving as the interface that
+allows the LLM to direct tasks across different types of automations.
+When we eventually move into Phase 5, we\'ll already have the hooks
+needed to integrate Hugging Face AutoTrain, retrain with labeled
+feedback, and deploy improved model checkpoints without rebuilding the
+system from scratch.
+
+I should have emphasized this orchestration logic and continuous
+improvement pipeline sooner. I just wanted to make sure we're aligned
+early so that future iterations can build cleanly on what we're doing
+now.\
+\
+Phase 5 (the continuous improvement layer) will be a separate contract
+down the line, and given you've been here from the start and understand
+the setup inside-out, you'll definitely be our front-runner for that
+work.\
+\
+Once this version is built and trained, we'll have a reusable base model
+ready to adapt for other client needs (marketing, lead gen, etc.). You'd
+be first in line to help evolve it if this goes well --- but let's lock
+this in first and take it from there.\
+\
+Let me know if any part doesn't make sense or if you'd like to discuss
+further --- thanks again!
+
+Project Objective:\
+Develop an AI-driven automation system that can control CargoWise's
+desktop app and web modules, powered by Hugging Face LLMs, with a live
+stream viewer and modular workflow execution.
+
+Key Points:
+
+\- Fully open-source stack.\
+- Natural language control via LLM (Hugging Face + LangChain).\
+- Real-time visual streaming + log tracking.\
+- Ability to execute both desktop and web automations.
+
+# Architecture Overview:
+
+See the architecture diagram below for the tech stack and system layers:
+
+![](media/image1.jpeg){width="6.0in" height="6.961137357830271in"}
+
+# Phase 1: Core Framework + MVP
+
+\- Backend: Set up FastAPI + Docker container; implement
+trigger-workflow and logs endpoints.
+
+\- Desktop + Web Automation: Set up Robot Framework with SikuliX +
+PyAutoGUI and Playwright.
+
+\- Front End: Basic dashboard (React + Ant Design) with trigger form and
+logs viewer.
+
+\- Testing: Validate triggering workflows and receiving logs.
+
+# Phase 2: Live Visual Streaming + Workflow Expansion
+
+\- Visual Streaming: Set up TigerVNC + noVNC; embed live stream in
+dashboard.
+
+\- Workflow Enhancements: Add 3--5 additional CargoWise workflows;
+implement error handling.
+
+\- Front End: Add workflow selector and live/historical logs alongside
+stream.
+
+# Phase 3: AI Integration (Hugging Face + LangChain)
+
+\- Integrate Hugging Face LLM using LangChain.
+
+\- Training: Fine-tune using Hugging Face Trainer + PEFT with
+prompt/response dataset.
+
+\- Backend: Connect AI parsing to workflow engine.
+
+\- Front End: Chat-style input and AI interpretation preview.
+
+# Phase 4: Optimization + Scalability
+
+\- AI Enhancements: Add RAG if needed; expand training dataset.
+
+\- Automation: Improve SikuliX templates and add parallel session
+support.
+
+\- Front End: Add workflow history, session recordings, and user roles.
+
+\- Docs: Full deployment + maintenance guide.
+
+# Key Technical Considerations:
+
+\- SikuliX requires clear screenshots of UI elements; manage
+resolution/scaling carefully.\
+- Secure the VNC stream with authentication; ensure auto-reconnect in
+frontend.\
+- Hugging Face fine-tuning: Start with few-shot prompting; expand
+dataset over time.\
+- Implement JWT auth for API; consider VPN/private network for security.
+
+# Handover Requirements:
+
+\- Repo: Full codebase on GitHub/GitLab.\
+- Docs: README, deployment guide, API specs.\
+- Testing: Basic test suite (pytest/Robot Framework tests).\
+- Deliverable: Working Dockerized app with VNC streaming + AI-controlled
+automation.
+
+# Overview
+
+MARC-1 (Mark1 Control Protocol) is the core orchestration and automation
+framework being developed to power agent-based automation across
+multiple verticals. While frameworks like LangChain offer strong agent
+tooling, MARC-1 is the control layer that fills critical gaps needed for
+real-world, multi-client automation systems. This document outlines what
+LangChain and the existing phase-based system cover, what's missing, and
+what MARC-1 must explicitly define and manage.
+
+## What LangChain Does Provide
+
+\- Agent orchestration and reasoning via LLMs
+
+\- Tool wrapping for API, browser, and other tasks
+
+\- Memory and prompt context support (including RAG)
+
+# What MARC-1 Adds (And Why It Matters)
+
+## 1. Protocol Schema & Task Structure
+
+MARC-1 introduces a standardized schema for defining tasks, tools, and
+fallback rules. This schema allows the system to route tasks
+consistently, track status, and allow new developers to plug in tools
+and workflows without disrupting the core logic.
+
+## 2. Tool Registry + Abstraction
+
+Tools must follow a consistent interface structure, including required
+inputs, outputs, and exception handling. MARC-1 enforces this by
+introducing a tool registry and version-controlled manifest, enabling
+safe extension of the system.
+
+## 3. Task Lifecycle & Execution State Management
+
+Unlike LangChain which operates in one-off execution flows, MARC-1
+manages the full task lifecycle --- from queueing and active execution
+to failure, escalation, and resolution --- all while updating task state
+and status logs.
+
+## 4. Fallback and HITL Policy Management
+
+MARC-1 centralizes fallback logic and escalation policies. This includes
+handling timeouts, retries, and human-in-the-loop decisions through
+policy-based routing (e.g., \'If confidence \< 0.7, pause and
+escalate\').
+
+## 5. Structured Logging and Replay
+
+Agent decision traces, execution outputs, tool choices, and escalations
+are all logged using a structured event model. This enables session
+replay, debugging, analytics, and ongoing model improvement.
+
+## 6. Extended Memory and Context Recall
+
+MARC-1 manages context recall not just from RAG, but from task history,
+outcomes, and session state. This gives agents operational memory beyond
+LLM prompts.
+
+## 7. API Interfaces and Webhook Support
+
+In addition to task submission, MARC-1 supports external event triggers,
+webhook intake, and secure task scheduling, enabling real-world
+integration across services.
+
+## 8. Multi-Agent & Multi-Tenant Governance
+
+MARC-1 introduces named agent roles, task isolation, and optional tenant
+segmentation --- so automations are role-safe and client-safe across
+deployments.
+
+# Conclusion
+
+While LangChain provides valuable LLM-based agent infrastructure, MARC-1
+acts as the mission-critical protocol layer that makes the system
+production-ready, modular, and extensible. This control layer turns
+individual automations into a scalable IP-grade platform.
+
+# Developer Implementation Notes -- What We Need From You
+
+To align on the structure and long-term modularity of MARC-1, the
+following items should be implemented or documented during the current
+build cycle. These actions are designed to protect the integrity of the
+protocol and allow for future scaling and collaboration.
+
+## Immediate Requests:
+
+\- Treat the orchestration logic and agent pipeline as the MARC-1
+Control Protocol.
+
+\- Modularize task intake, routing, fallback, and execution logic for
+reuse.
+
+\- Begin building with other verticals and contributors in mind ---
+avoid hardcoded CargoWise logic where possible.
+
+## Lightweight Documentation Needed:
+
+\- Agent logic flow and decision-making path.
+
+\- Tool interface structure (input format, output expectations, standard
+method signature).
+
+\- Lifecycle states for a task (e.g., queued, running, paused, failed,
+resolved).
+
+\- Fallback and escalation logic (rules for when to HITL, retry, or
+stop).
+
+\- Instructions or template for how to add a new tool into the registry.
+
+## Logging and Observability:
+
+\- Start implementing structured logs for agent decisions (tool
+selected, why, inputs, errors, resolutions).
+
+\- Ensure each major action or failure is traceable, ideally with
+timestamps and task ID linkage.
+
+## Outcome:
+
+This doesn't need to slow the current build --- it's more about adding
+structure to what you're already doing. We just want to make sure the
+system is future-proof, extendable, and clear enough for other devs to
+collaborate on later.
+Hi Steadson,\
+\
+Following our kickoff and after reflecting on the project architecture
+more deeply this morning, I've been thinking carefully about the
+long-term implications of the system we're building. Specifically around
+how we handle scaling, cross-client forking, and execution abstraction.\
+\
+Given your expertise and that you've actually worked with MCP before ---
+wouldn't it make sense to integrate something like that into the system
+you're currently developing?\
+\
+I'm obviously not an expert like you, but it seems to me that with a bit
+more clarity around our goal to scale and fork this platform into
+multiple verticals and clients, isn't something like MCP or a concept
+protocol layer quite critical?\
+\
+Here are a few specific questions I want to put forward for your
+insight:
+
+# Key Questions to Consider
+
+1.  1\. When we onboard a new client who uses a slightly different set
+    of tools or workflows, how would we currently manage that in the
+    system you've scoped? Would we have to re-code multiple chains or
+    execution logic for each one?
+
+2.  2\. How do we ensure that the LangChain agent doesn't get overloaded
+    with specific logic that will only apply to one client or one UI
+    stack?
+
+3.  3\. If we decide to fork the product into another vertical --- say,
+    law, or insurance --- what would that mean for the current execution
+    logic? Would we be able to reuse much, or would it require writing
+    new flows entirely from scratch?
+
+4.  4\. How do we currently plan to structure workflows so that they're
+    client-specific, without hardcoding them into the LangChain agent's
+    logic?
+
+5.  5\. If a client wanted to see exactly what an AI agent is doing and
+    we had to simulate or document a workflow for auditing or onboarding
+    purposes, how would we do that under the current model?
+
+6.  6\. How would we log and replay actions performed by the AI agent?
+    If a human had to take over, would we be able to hand them a clearly
+    structured execution path?
+
+7.  7\. If we wanted to make it easy to test and validate workflows for
+    a new client --- with sandboxed workflows or simulated flows --- how
+    could we do that with what we\'ve currently built?
+
+8.  8\. What happens when a UI changes or an execution flow needs to be
+    updated for just one client --- does that break the whole chain?
+    Wouldn't it require re-testing the LangChain logic again?
+
+9.  9\. If we get to the point of scaling to 10--15 clients, each with
+    slightly different tools or versions of CargoWise, what's our plan
+    to avoid maintaining a mess of redundant flows?
+
+10. 10\. From your experience, are there any design patterns or
+    modularization strategies you'd recommend that can help reduce
+    rework and improve execution abstraction?
+
+Would love to get your thoughts on all of the above. These aren't
+rhetorical --- I'm genuinely interested in your perspective given your
+experience. Once we've worked through these together, we can align on
+the next architectural decisions.\
+\
+Thanks
+
+cow X, [26/05/2025 08:06]
+can you add langGraph too?
+My friend is recommending it
+He thinks the MCP is not enough
+Langhraph seeing as we're using langchain
+just to clarify — we're not replacing MCP.
+LangGraph would be our internal graph and memory layer. MCP still sits on top, managing external tool calls and multi-agent orchestration.
+LangGraph just handles the local logic, retry flows, and path tracking more cleanly than a custom state machine.
+
+cow X, [26/05/2025 08:06]
+LangGraph handles:
+•The "thinking and retrying" part
+•MCP handles: "calling tools and APIs"
+
+cow X, [26/05/2025 08:07]
+Why Phase 1 (Minimal Integration) Is Optimal:
+Your Phase 1 already includes:
+•LangChain routing
+•Tool registry concepts (via MCP)
+•Human-in-the-loop (HITL)
+•Structured logging
+•Playwright + Robot automation
+
+These components require orchestration, state tracking, and dependency resolution. If you don't include LangGraph now:
+•You'll hardcode tool-to-tool transitions and fallback logic.
+•You'll later have to refactor all HITL retry logic, approval gating, and branching workflows into a graph model anyway.
+
+Minimal LangGraph in Phase 1 means:
+•You define tools as LangGraph nodes from day one
+•You support pause/resume paths for HITL without rewriting
+•You structure retry logic and dependency tracking from the start
+
+Why LangGraph Matures in Phase 2:
+Your Phase 2 adds:
+•Pause/resume/edit workflows
+•Real-time status monitoring
+•Error diagnostics
+•VNC streaming and UI-level feedback
+
+This is where LangGraph earns its keep, by:
+•Handling fault-tolerant routing
+•Reacting to real-time errors
+•Adjusting flows based on confidence thresholds or visual stream signals
+
+In this phase, you expand the graph traversal logic, error-bound transitions, and conditional agents.
+You're not coding LangGraph yet — just define the tool interfaces with Pydantic so we don't box ourselves in. We'll wrap them in the graph structure in Phase 2 without rewriting the logic.

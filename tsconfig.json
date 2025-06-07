@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": false,
+   // "types": ["node"]
+   "types": []
+  },
+  "include": ["src"]
+}
