@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Play,
   Pause,
@@ -18,87 +18,58 @@ import {
   Server,
   Database
 } from 'lucide-react';
-import { apiService, StreamingData, DashboardStats } from '../services/apiService';
+import { apiService } from '../services/apiService';
+import { useDashboardStore } from '../stores/dashboardStore';
 
 export default function Dashboard() {
-  const [streamingData, setStreamingData] = useState<StreamingData | null>(null);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    streamingData,
+    dashboardStats,
+    error,
+    loading,
+    fetchDashboardData,
+    toggleStreaming
+  } = useDashboardStore();
+
   const [websocket, setWebsocket] = useState<WebSocket | null>(null);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      try {
-        // Fetch streaming status
-        const streamData = await apiService.getStreamingStatus();
-        setStreamingData(streamData);
-        
-        // Fetch dashboard stats
-        const userId = localStorage.getItem('user_id') || undefined;
-        const clientId = localStorage.getItem('client_id') || undefined;
-        const stats = await apiService.getDashboardStats(userId, clientId);
-        setDashboardStats(stats || null);
-        
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch dashboard data');
-        console.error('Dashboard data fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialData();
+    // Fetch initial data
+    fetchDashboardData();
 
     // Set up WebSocket connection
     const ws = apiService.setupWebSocket((data) => {
       if (data.type === 'update') {
-        setStreamingData(data.data);
+        // Update streaming data directly in the store if needed
+        // You might want to add an action to the store for this
+        useDashboardStore.setState({ streamingData: data.data });
       }
     });
 
     setWebsocket(ws);
 
     return () => {
+      if (ws) {
+        ws.close();
+      }
+    };
+  }, [fetchDashboardData]);
+
+  // Clean up websocket on unmount
+  useEffect(() => {
+    return () => {
       if (websocket) {
         websocket.close();
       }
     };
-  }, []);
+  }, [websocket]);
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      // Fetch streaming status
-      const streamData = await apiService.getStreamingStatus();
-      setStreamingData(streamData);
-      
-      // Fetch dashboard stats
-      const userId = localStorage.getItem('user_id') || undefined;
-      const clientId = localStorage.getItem('client_id') || undefined;
-      const stats = await apiService.getDashboardStats(userId, clientId);
-      setDashboardStats(stats || null);
-      
-      setError(null);
-    } catch (err) {
-      setError('Failed to refresh dashboard data');
-      console.error('Dashboard refresh error:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleRefresh = () => {
+    fetchDashboardData();
   };
 
-  const handleStreamingControl = async (action: 'start' | 'stop' | 'pause') => {
-    try {
-      await apiService.toggleStreaming(action);
-      const newStatus = await apiService.getStreamingStatus();
-      setStreamingData(newStatus);
-      setError(null);
-    } catch (err) {
-      setError(`Failed to ${action} streaming`);
-    }
+  const handleStreamingControl = (action: 'start' | 'stop' | 'pause') => {
+    toggleStreaming(action);
   };
 
   const getStatusColor = (status: string): string => {

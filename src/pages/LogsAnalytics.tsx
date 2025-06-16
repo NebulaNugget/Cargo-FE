@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
-  RefreshCw,
+    RefreshCw,
   Info,
   Filter,
   Calendar,
@@ -18,42 +18,38 @@ import {
   BarChart3,
   AlertCircle,
   Database,
-  Server
+  Server,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 
 import type { Log } from '../services/apiService';
-import { apiService } from '../services/apiService';
+import { useLogStore } from '../stores/logStore';
 
 const LOG_LEVELS = ['INFO', 'WARNING', 'ERROR'] as const;
 type LogLevel = typeof LOG_LEVELS[number];
 
 export default function LogsAnalytics() {
-  const [logs, setLogs] = useState<Log[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [levelFilter, setLevelFilter] = useState<LogLevel | ''>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchLogs = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filters: { level?: LogLevel; startDate?: string; endDate?: string } = {};
-      if (levelFilter) filters.level = levelFilter;
-      if (startDate) filters.startDate = startDate;
-      if (endDate) filters.endDate = endDate;
-      
-      const data = await apiService.getLogs(filters);
-      setLogs(data);
-    } catch (err) {
-      setError('Failed to fetch logs. Please check your connection and try again.');
-      console.error('Error fetching logs:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+     logs,
+    loading,
+    error,
+    levelFilter,
+    startDate,
+    endDate,
+    searchTerm,
+    currentPage,
+    itemsPerPage,
+    fetchLogs,
+    setLevelFilter,
+    setDateRange,
+    setSearchTerm,
+    clearFilters,
+    setCurrentPage,
+    setItemsPerPage
+  } = useLogStore();
 
   const handleRefresh = () => {
     fetchLogs();
@@ -64,15 +60,20 @@ export default function LogsAnalytics() {
   };
 
   const handleClearFilters = () => {
-    setLevelFilter('');
-    setStartDate('');
-    setEndDate('');
-    setSearchTerm('');
+    clearFilters();
+  };
+
+  const handleStartDateChange = (date: string) => {
+    setDateRange(date, endDate);
+  };
+
+  const handleEndDateChange = (date: string) => {
+    setDateRange(startDate, date);
   };
 
   useEffect(() => {
     fetchLogs();
-  }, []);
+  }, [fetchLogs]);
 
   const getLogLevelColor = (level: LogLevel): string => {
     switch (level) {
@@ -120,7 +121,60 @@ export default function LogsAnalytics() {
     log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
     log.source.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+ // Calculate pagination
+  const totalItems = filteredLogs.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentItems = filteredLogs.slice(startIndex, endIndex);
+  // Generate page numbers for breadcrumb
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5; // Number of page buttons to show
+    
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than max visible
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Always show first page
+      pageNumbers.push(1);
+      
+      // Calculate start and end of visible pages
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      
+      // Adjust if at the beginning or end
+      if (currentPage <= 2) {
+        end = Math.min(totalPages - 1, maxVisiblePages - 1);
+      } else if (currentPage >= totalPages - 1) {
+        start = Math.max(2, totalPages - maxVisiblePages + 2);
+      }
+      
+      // Add ellipsis if needed
+      if (start > 2) {
+        pageNumbers.push('...');
+      }
+      
+      // Add middle pages
+      for (let i = start; i <= end; i++) {
+        pageNumbers.push(i);
+      }
+      
+      // Add ellipsis if needed
+      if (end < totalPages - 1) {
+        pageNumbers.push('...');
+      }
+      
+      // Always show last page
+      if (totalPages > 1) {
+        pageNumbers.push(totalPages);
+      }
+    }
+    
+    return pageNumbers;
+  };
   const stats = getLogStats();
 
   return (
@@ -275,7 +329,7 @@ export default function LogsAnalytics() {
               </label>
               <select
                 value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value as LogLevel)}
+                onChange={(e) => setLevelFilter(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white/90 backdrop-blur-sm transition-all duration-200"
               >
                 <option value="">All Levels</option>
@@ -295,7 +349,7 @@ export default function LogsAnalytics() {
               <input
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => handleStartDateChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white/90 backdrop-blur-sm transition-all duration-200"
               />
             </div>
@@ -308,7 +362,7 @@ export default function LogsAnalytics() {
               <input
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => handleEndDateChange(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white/90 backdrop-blur-sm transition-all duration-200"
               />
             </div>
@@ -395,7 +449,7 @@ export default function LogsAnalytics() {
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log, index) => (
+                  currentItems.map((log, index) => (
                     <tr key={index} className="hover:bg-gray-50/50 transition-colors duration-150">
                       <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-600 font-medium">
                         {new Date(log.timestamp).toLocaleString([], {
@@ -430,8 +484,94 @@ export default function LogsAnalytics() {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+      {!loading && filteredLogs.length > 0 && (
+        <div className="px-4 py-3 bg-gray-50/80 border-t border-gray-200/50 sm:px-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-xs text-gray-700">
+              Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{endIndex}</span> of{' '}
+              <span className="font-medium">{totalItems}</span> results
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white/90"
+              >
+                <option value={5}>5 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+              
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-1.5 rounded-l-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">First Page</span>
+                  <ChevronsLeft className="h-3 w-3" aria-hidden="true" />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-1.5 border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Previous</span>
+                  <ChevronLeft className="h-3 w-3" aria-hidden="true" />
+                </button>
+                
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span
+                      key={`ellipsis-${index}`}
+                      className="relative inline-flex items-center px-3 py-1.5 border border-gray-300 bg-white text-xs font-medium text-gray-700"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={`page-${page}`}
+                      onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                      className={`relative inline-flex items-center px-3 py-1.5 border ${
+                        currentPage === page
+                          ? 'z-10 bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-500'
+                          : 'bg-white text-gray-500 hover:bg-gray-50 border-gray-300'
+                      } text-xs font-medium`}
+                    >
+                      {page}
+                    </button>
+                  )
+                ))}
+                
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-1.5 border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Next</span>
+                  <ChevronRight className="h-3 w-3" aria-hidden="true" />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-1.5 rounded-r-md border border-gray-300 bg-white text-xs font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Last Page</span>
+                  <ChevronsRight className="h-3 w-3" aria-hidden="true" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
         </div>
       </div>
-    </div>
+  
   );
 }

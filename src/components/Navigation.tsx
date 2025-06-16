@@ -11,7 +11,7 @@ import {
   FiUsers
 } from 'react-icons/fi';
 import { Shield } from 'lucide-react';
-import { authService } from '../services/authService';
+import { useAuthStore } from '../stores/authStore';
 
 const DRAWER_WIDTH = '240px';
 
@@ -29,28 +29,33 @@ const navItems: NavItem[] = [
   { text: 'Dashboard', path: '/dashboard', icon: <FiGrid className="w-5 h-5" /> },
   { text: 'Natural Language Query', path: '/query', icon: <FiTerminal className="w-5 h-5" /> },
   { text: 'Logs & Analytics', path: '/logs', icon: <FiBarChart2 className="w-5 h-5" /> },
- { text: 'User Management', path: '/users', icon: <FiUsers className="w-5 h-5" /> },
+  { text: 'User Management', path: '/users', icon: <FiUsers className="w-5 h-5" /> },
   { text: 'Settings', path: '/settings', icon: <FiSettings className="w-5 h-5" /> },
-  
 ];
 
 export default function Navigation({ children }: NavigationProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [clientName, setClientName] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Use auth store instead of local state
+  const { user, logout: authLogout } = useAuthStore();
 
+  // Derived values from user data
+  const userName = user 
+    ? (user.first_name && user.last_name 
+        ? `${user.first_name} ${user.last_name}` 
+        : user.username)
+    : '';
+  
+  const userEmail = user?.email || '';
+  
+  // Get client name from localStorage (if this comes from elsewhere, you might want to move it to the store too)
+  const [clientName, setClientName] = useState('');
+  
   useEffect(() => {
-    // Get user data from localStorage
-    const firstName = localStorage.getItem('first_name') || '';
-    const lastName = localStorage.getItem('last_name') || '';
-    const username = localStorage.getItem('username') || '';
     const clientNameFromStorage = localStorage.getItem('client_name') || '';
-    
-    // Set user name (prefer full name, fallback to username)
-    setUserName(firstName && lastName ? `${firstName} ${lastName}` : username);
     setClientName(clientNameFromStorage);
   }, []);
 
@@ -58,9 +63,15 @@ export default function Navigation({ children }: NavigationProps) {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authLogout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Navigate to login even if logout fails
+      navigate('/login');
+    }
   };
 
   const drawer = (
@@ -146,21 +157,19 @@ export default function Navigation({ children }: NavigationProps) {
                 <FiMenu className="w-6 h-6" />
               </button>
               
-           
-              
               {/* Desktop header with logo, brand name and client name */}
               <div className="hidden lg:flex items-center">
                 {/* Logo and Brand Section */}
-        <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg mx-auto ">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 454.46 430.12" className="w-8 h-8">
-            <g>
-              <path d="M312.6 410.71L401.27 322l9.44-9.44 33.91-33.91c25-22.12-17.92-21.09-36-21l-13.1.09-31.17.21-48 .32-101.29 101.29-144.5-144.5 144.5-144.5 107 107 .27-.12v.39l90.42-.6c25.81-.17 60.93 2.68 29-28.65l-31-31-98.15-98.17a66.73 66.73 0 0 0-94.1 0l-3.44 3.44-3.44-3.44a66.74 66.74 0 0 0-94.1 0l-98.11 98.11a66.74 66.74 0 0 0 0 94.1l3.44 3.44-3.44 3.44a66.74 66.74 0 0 0 0 94.1l98.11 98.11a66.74 66.74 0 0 0 94.1 0l3.44-3.44 3.44 3.44a66.74 66.74 0 0 0 94.1 0zM336.18 144l-97.27-97.3 3.44-3.44a33 33 0 0 1 46.39 0l98.11 98.11q1.09 1.09 2.05 2.25l-52.72.35zM384 291.62l-95.24 95.24a33 33 0 0 1-46.39 0l-3.44-3.44L330.36 292l53.63-.35zM46.7 191.21l-3.44-3.44a33 33 0 0 1 0-46.39l98.11-98.11a33 33 0 0 1 46.39 0l3.44 3.44-144.5 144.5zm0 47.71l144.5 144.5-3.44 3.44a33 33 0 0 1-46.39 0l-98.11-98.11a33 33 0 0 1 0-46.39l3.44-3.44z" fill="white" fillRule="evenodd"/>
-            </g>
-          </svg>
-        </div>
-              <div className="text-center">
-          <h1 className="text-xl font-bold text-blue-500 mt-5 ml-2">CARGONATION CO-PILOT</h1>
-        </div>
+                <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg mx-auto ">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 454.46 430.12" className="w-8 h-8">
+                    <g>
+                      <path d="M312.6 410.71L401.27 322l9.44-9.44 33.91-33.91c25-22.12-17.92-21.09-36-21l-13.1.09-31.17.21-48 .32-101.29 101.29-144.5-144.5 144.5-144.5 107 107 .27-.12v.39l90.42-.6c25.81-.17 60.93 2.68 29-28.65l-31-31-98.15-98.17a66.73 66.73 0 0 0-94.1 0l-3.44 3.44-3.44-3.44a66.74 66.74 0 0 0-94.1 0l-98.11 98.11a66.74 66.74 0 0 0 0 94.1l3.44 3.44-3.44 3.44a66.74 66.74 0 0 0 0 94.1l98.11 98.11a66.74 66.74 0 0 0 94.1 0l3.44-3.44 3.44 3.44a66.74 66.74 0 0 0 94.1 0zM336.18 144l-97.27-97.3 3.44-3.44a33 33 0 0 1 46.39 0l98.11 98.11q1.09 1.09 2.05 2.25l-52.72.35zM384 291.62l-95.24 95.24a33 33 0 0 1-46.39 0l-3.44-3.44L330.36 292l53.63-.35zM46.7 191.21l-3.44-3.44a33 33 0 0 1 0-46.39l98.11-98.11a33 33 0 0 1 46.39 0l3.44 3.44-144.5 144.5zm0 47.71l144.5 144.5-3.44 3.44a33 33 0 0 1-46.39 0l-98.11-98.11a33 33 0 0 1 0-46.39l3.44-3.44z" fill="white" fillRule="evenodd"/>
+                    </g>
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <h1 className="text-xl font-bold text-blue-500 mt-5 ml-2">CARGONATION CO-PILOT</h1>
+                </div>
                 {clientName && (
                   <div className="px-3 py-1 bg-blue-50 rounded-lg border mt-5 mr-7 border-blue-100">
                     <span className="text-sm font-medium text-blue-700">{clientName}</span>
@@ -199,7 +208,7 @@ export default function Navigation({ children }: NavigationProps) {
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="text-sm font-medium text-gray-900">{userName}</p>
-                      <p className="text-xs text-gray-500 mt-1">{localStorage.getItem('email') || ''}</p>
+                      <p className="text-xs text-gray-500 mt-1">{userEmail}</p>
                     </div>
                     <button
                       onClick={handleLogout}

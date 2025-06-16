@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { FiLoader } from 'react-icons/fi';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -7,14 +7,14 @@ import Navigation from './components/Navigation';
 import Register from './pages/Register';
 import NaturalLanguageQuery from './pages/NaturalLanguageQuery';
 import LogsAnalytics from './pages/LogsAnalytics';
-import { authService } from './services/authService';
 import ResetPassword from './pages/ResetPassword';
 import UserManagement from './pages/UserManagement';
+import { useAuthStore } from './stores/authStore';
 import './App.css';
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-  const isAuthenticated = authService.isAuthenticated();
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -24,30 +24,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
 };
 
 function App() {
- const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [user, setUser] = useState<any>(null);
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
 
-useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        if (authService.isAuthenticated()) {
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-        // If token is invalid, logout
-        authService.logout();
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
+  useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   if (isLoading) {
     return (
@@ -76,7 +57,7 @@ useEffect(() => {
             </ProtectedRoute>
           } 
         />
-        <Route 
+                <Route 
           path="/query" 
           element={
             <ProtectedRoute>
@@ -97,30 +78,30 @@ useEffect(() => {
           } 
         />
         <Route 
-          path="/settings" 
+          path="/users" 
           element={
             <ProtectedRoute>
               <Navigation>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-                  <p className="mt-4 text-gray-600">This page is under construction.</p>
-                </div>
+                <UserManagement />
               </Navigation>
             </ProtectedRoute>
           } 
         />
         <Route 
-  path="/users" 
-  element={
-    <ProtectedRoute>
-      <Navigation>
-        <UserManagement />
-      </Navigation>
-    </ProtectedRoute>
-  } 
-/>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <Navigation>
+                <div className="p-6">
+                  <h1 className="text-2xl font-semibold mb-4">Settings</h1>
+                  <p>Settings page content will be implemented soon.</p>
+                </div>
+              </Navigation>
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
       </Routes>
     </Router>
   );

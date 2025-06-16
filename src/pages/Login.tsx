@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { authService } from '../services/authService';
-import { Eye, EyeOff, LogIn, Mail, Lock, Shield } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
+import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-react';
+
+interface FormData {
+  username: string;
+  password: string;
+}
 
 export default function Login() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { login, error, isLoading, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     username: '',
     password: '',
   });
@@ -19,22 +23,27 @@ export default function Login() {
       ...prev,
       [name]: value,
     }));
-    setError(null);
+    // Clear any existing errors when user starts typing
+    if (error) {
+      clearError();
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
+    
+    // Basic validation
+    if (!formData.username.trim() || !formData.password.trim()) {
+      return;
+    }
 
     try {
-      await authService.login(formData.username, formData.password);
-      navigate('/dashboard', {replace:true});
-    } catch (err:any) {
-      setError(err.message|| 'Invalid username or password');
-      console.error('Login error:', err);
-    } finally {
-      setLoading(false);
+      await login(formData.username.trim(), formData.password);
+      // Navigate to dashboard on successful login
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      // Error is already handled by the store
+      console.error('Login failed:', err);
     }
   };
 
@@ -127,6 +136,7 @@ export default function Login() {
                     placeholder="Enter username"
                     value={formData.username}
                     onChange={handleChange}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -149,11 +159,13 @@ export default function Login() {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleChange}
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -165,11 +177,15 @@ export default function Login() {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded disabled:opacity-50"
+                    disabled={isLoading}
                   />
                   <span className="ml-2 text-gray-600 text-sm">Remember Me</span>
                 </label>
-                <RouterLink to="/reset-password" className="text-blue-600 hover:text-blue-500 font-medium text-sm">
+                <RouterLink 
+                  to="/reset-password" 
+                  className="text-blue-600 hover:text-blue-500 font-medium text-sm disabled:opacity-50"
+                >
                   Reset Password?
                 </RouterLink>
               </div>
@@ -177,14 +193,14 @@ export default function Login() {
               {/* Login Button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading || !formData.username.trim() || !formData.password.trim()}
                 className={`w-full py-2.5 px-4 rounded-lg font-medium text-white transition-all duration-200 text-sm ${
-                  loading
+                  isLoading || !formData.username.trim() || !formData.password.trim()
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 transform hover:-translate-y-0.5 shadow-md hover:shadow-lg'
                 }`}
               >
-                {loading ? (
+                {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Signing in...
@@ -202,9 +218,9 @@ export default function Login() {
             <div className="mt-5 text-center">
               <p className="text-sm text-gray-600">
                 New to CarGonation Co Pilot?{' '}
-                <a href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
+                <RouterLink to="/register" className="text-blue-600 hover:text-blue-500 font-medium">
                   Sign Up?
-                </a>
+                </RouterLink>
               </p>
             </div>
           </div>

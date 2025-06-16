@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import {
   Users,
   UserCheck,
@@ -9,160 +9,41 @@ import {
   Search,
   Filter,
   Shield,
-  Plus,
   MoreHorizontal
 } from 'lucide-react';
-import { authService } from '../services/authService';
-import { User, UserRole } from '../types';
-
-// Extended user interface to include additional fields from your API response
-interface ExtendedUser extends User {
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  full_name?: string;
-  can_execute_workflows: boolean;
-  can_approve_tasks: boolean;
-  can_modify_workflows: boolean;
-  can_view_all_clients: boolean;
-}
+import { useUserStore } from '../stores/userStore';
+import { UserRole } from '../types';
 
 export default function UserManagement() {
-  const [users, setUsers] = useState<ExtendedUser[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<ExtendedUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState<string>('ALL');
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
-  const [currentUser, setCurrentUser] = useState<ExtendedUser | null>(null);
+  const {
+    users,
+    filteredUsers,
+    currentUser,
+    loading,
+    error,
+    searchTerm,
+    filterRole,
+    filterStatus,
+    fetchUsers,
+    setSearchTerm,
+    setFilterRole,
+    setFilterStatus,
+    approveUser,
+    disableUser,
+    deleteUser
+  } = useUserStore();
 
-  // Fetch users
+  // Fetch users on component mount
   useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      try {
-        // Get current user to check permissions
-        const userData = await authService.getCurrentUser();
-        setCurrentUser(userData as ExtendedUser);
-        
-        // Get all users for the client
-        const response = await authService.getClientUsers();
-        setUsers(response as ExtendedUser[]);
-        setFilteredUsers(response as ExtendedUser[]);
-        setError(null);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch users');
-        console.error('Error fetching users:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
-  // Apply filters when search term or filters change
-  useEffect(() => {
-    let result = [...users];
-    
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(user => 
-        user.username.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term) ||
-        (user.first_name && user.first_name.toLowerCase().includes(term)) ||
-        (user.last_name && user.last_name.toLowerCase().includes(term))
-      );
-    }
-    
-    // Apply role filter
-    if (filterRole !== 'ALL') {
-      result = result.filter(user => user.role === filterRole);
-    }
-    
-    // Apply status filter
-    if (filterStatus !== 'ALL') {
-      const isActive = filterStatus === 'ACTIVE';
-      result = result.filter(user => user.is_active === isActive);
-    }
-    
-    setFilteredUsers(result);
-  }, [searchTerm, filterRole, filterStatus, users]);
-
-  // Handle user actions
-  const handleApproveUser = async (userId: string) => {
-    try {
-      setLoading(true);
-      await authService.updateUserStatus(userId, true);
-      
-      // Update local state
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.id === userId ? { ...user, is_active: true } : user
-        )
-      );
-      
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to approve user');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDisableUser = async (userId: string) => {
-    try {
-      setLoading(true);
-      await authService.updateUserStatus(userId, false);
-      
-      // Update local state
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.id === userId ? { ...user, is_active: false } : user
-        )
-      );
-      
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to disable user');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Handle user actions with confirmation for delete
   const handleDeleteUser = async (userId: string) => {
     if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       return;
     }
-    
-    try {
-      setLoading(true);
-      await authService.deleteUser(userId);
-      
-      // Update local state
-      setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-      
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete user');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshUsers = async () => {
-    setLoading(true);
-    try {
-      const response = await authService.getClientUsers();
-      setUsers(response as ExtendedUser[]);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to refresh users');
-    } finally {
-      setLoading(false);
-    }
+    await deleteUser(userId);
   };
 
   // Format date for display
@@ -179,7 +60,6 @@ export default function UserManagement() {
     switch (role) {
       case 'ADMIN':
         return 'bg-purple-100 text-purple-800 border border-purple-200';
-     
       case 'OPERATOR':
         return 'bg-green-100 text-green-800 border border-green-200';
       case 'VIEWER':
@@ -193,7 +73,7 @@ export default function UserManagement() {
   const canManageUsers = currentUser?.role === 'ADMIN' || currentUser?.can_approve_tasks;
 
   return (
-  <div className="min-h-screen lg:ml-60 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <div className="min-h-screen lg:ml-60 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100/50 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.8))] -z-10"></div>
       
@@ -213,10 +93,10 @@ export default function UserManagement() {
           </div>
           
           <div className="flex items-center gap-2">
-           
             <button
-              onClick={() => {}}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all"
+              onClick={fetchUsers}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -261,7 +141,6 @@ export default function UserManagement() {
                 >
                   <option value="ALL">All Roles</option>
                   <option value="ADMIN">Admin</option>
-                
                   <option value="OPERATOR">Operator</option>
                   <option value="VIEWER">Viewer</option>
                 </select>
@@ -372,9 +251,9 @@ export default function UserManagement() {
                         <div className="flex justify-end items-center gap-1">
                           {!user.is_active && canManageUsers && (
                             <button
-                              onClick={() => handleApproveUser(user.id)}
+                              onClick={() => approveUser(user.id)}
                               disabled={loading || user.id === currentUser?.id}
-                              className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors"
+                              className="p-1.5 text-green-600 hover:text-green-800 hover:bg-green-50 rounded-md transition-colors disabled:opacity-50"
                               title="Approve User"
                             >
                               <UserCheck className="w-4 h-4" />
@@ -383,9 +262,9 @@ export default function UserManagement() {
                           
                           {user.is_active && canManageUsers && (
                             <button
-                              onClick={() => handleDisableUser(user.id)}
+                              onClick={() => disableUser(user.id)}
                               disabled={loading || user.id === currentUser?.id}
-                              className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-md transition-colors"
+                              className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-md transition-colors disabled:opacity-50"
                               title="Disable User"
                             >
                               <UserX className="w-4 h-4" />
@@ -396,7 +275,7 @@ export default function UserManagement() {
                             <button
                               onClick={() => handleDeleteUser(user.id)}
                               disabled={loading || user.id === currentUser?.id}
-                              className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                              className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
                               title="Delete User"
                             >
                               <Trash2 className="w-4 h-4" />
