@@ -9,6 +9,7 @@ import NaturalLanguageQuery from './pages/NaturalLanguageQuery';
 import LogsAnalytics from './pages/LogsAnalytics';
 import ResetPassword from './pages/ResetPassword';
 import UserManagement from './pages/UserManagement';
+import TaskManager from './pages/TaskManager';
 import { useAuthStore } from './stores/authStore';
 import './App.css';
 
@@ -57,7 +58,7 @@ function App() {
             </ProtectedRoute>
           } 
         />
-                <Route 
+        <Route 
           path="/query" 
           element={
             <ProtectedRoute>
@@ -83,6 +84,16 @@ function App() {
             <ProtectedRoute>
               <Navigation>
                 <UserManagement />
+              </Navigation>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/tasks" 
+          element={
+            <ProtectedRoute>
+              <Navigation>
+                <TaskManager />
               </Navigation>
             </ProtectedRoute>
           } 

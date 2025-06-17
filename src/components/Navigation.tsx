@@ -8,7 +8,8 @@ import {
   FiSettings,
   FiLogOut,
   FiUser,
-  FiUsers
+  FiUsers,
+  FiClipboard
 } from 'react-icons/fi';
 import { Shield } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
@@ -28,6 +29,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { text: 'Dashboard', path: '/dashboard', icon: <FiGrid className="w-5 h-5" /> },
   { text: 'Natural Language Query', path: '/query', icon: <FiTerminal className="w-5 h-5" /> },
+   { text: 'Task Manager', path: '/tasks', icon: <FiClipboard className="w-5 h-5" /> },
   { text: 'Logs & Analytics', path: '/logs', icon: <FiBarChart2 className="w-5 h-5" /> },
   { text: 'User Management', path: '/users', icon: <FiUsers className="w-5 h-5" /> },
   { text: 'Settings', path: '/settings', icon: <FiSettings className="w-5 h-5" /> },

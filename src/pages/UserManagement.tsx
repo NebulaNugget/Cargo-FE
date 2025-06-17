@@ -220,7 +220,7 @@ export default function UserManagement() {
                               : user.username.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm self-start justify-self-start font-medium text-gray-900 flex flex-col justify-center">
                               {user.first_name && user.last_name 
                                 ? `${user.first_name} ${user.last_name}`
                                 : user.username}

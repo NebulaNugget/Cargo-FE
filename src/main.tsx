@@ -10,6 +10,7 @@ import './stores/queryStore'
 import './stores/logStore'
 import './stores/dashboardStore'
 import './stores/userStore'
+import './stores/taskStore'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

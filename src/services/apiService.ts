@@ -42,6 +42,49 @@ export interface Log {
   details: Record<string, any>;
   source: string;
 }
+// Add Task interface
+export interface Task {
+  id: string;
+  workflow_type: string;
+  query: string;
+  parameters: Record<string, any>;
+  tools: Array<{
+    name: string;
+    description: string;
+    parameters: Record<string, any>;
+  }>;
+  context: {
+    intent: string;
+    confidence: number;
+    marc1_intent?: {
+      intent_name: string;
+      confidence: number;
+      parameters: Record<string, any>;
+      raw_query: string;
+      extracted_at: string;
+    };
+  };
+  metadata: Record<string, any>;
+  current_state: {
+    task_id: string;
+    status: string;
+    step_index: number;
+    current_tool: string | null;
+    parameters: Record<string, any>;
+    outputs: Record<string, any>;
+    error: string | null;
+    context: Record<string, any>;
+    updated_at: string;
+    requires_approval: boolean;
+    metadata: Record<string, any>;
+  };
+  history: Array<any>;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+  user_id: string;
+  client_id: string;
+}
 // Add new interface for dashboard stats
 export interface DashboardStats {
   total_tasks: {
@@ -152,6 +195,15 @@ export interface TaskResult {
   workflow_id: string | null;
 }
 
+export interface TasksResponse {
+  items: Task[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    has_more: boolean;
+  };
+}
 
 
 class ApiService {
@@ -364,6 +416,26 @@ class ApiService {
       // Return mock data for development
       // return mockData.dashboardStats;
       
+    }
+  }
+
+  // Add method to fetch tasks with pagination and filters
+  async getTasks(params: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+    start_date?: string;
+    end_date?: string;
+  } = {}): Promise<TasksResponse> {
+    try {
+      return await this.request<TasksResponse>('/api/v1/tasks', {
+        method: 'GET',
+        params,
+      });
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+      // Return mock tasks data for development
+  
     }
   }
 }

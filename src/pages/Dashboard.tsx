@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/apiService';
 import { useDashboardStore } from '../stores/dashboardStore';
-
+import { useNavigate } from 'react-router-dom';
 export default function Dashboard() {
   const {
     streamingData,
@@ -98,7 +98,11 @@ export default function Dashboard() {
   const getActionStatusColor = (status: string): string => {
     return getStatusColor(status);
   };
-
+  const navigate = useNavigate(); // Add this for navigation
+// Add this function to handle navigation to tasks
+  const handleViewAllTasks = () => {
+    navigate('/tasks');
+  };
   return (
     <div className="min-h-screen lg:ml-60 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Background Pattern */}
@@ -358,7 +362,7 @@ export default function Dashboard() {
                 <p className="text-xs text-gray-600">Latest system operations and events</p>
               </div>
             </div>
-            <button className="text-xs text-blue-600 hover:text-blue-700 font-medium">
+            <button onClick={handleViewAllTasks} className="text-xs text-blue-600 hover:text-blue-700 font-medium">
               View All →
             </button>
           </div>
