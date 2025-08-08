@@ -77,6 +77,12 @@ interface TaskStoreState {
   setEndDateFilter: (date: string) => void;
   setSearchTerm: (term: string) => void;
   applyFilters: () => void;
+  // Task control actions
+  pauseTask: (taskId: string) => Promise<void>;
+  resumeTask: (taskId: string) => Promise<void>;
+  rejectTask: (taskId: string, reason: string) => Promise<void>;
+  editTask: (taskId: string, parameters: Record<string, any>) => Promise<void>;
+  approveTask: (taskId: string, approvalData?: Record<string, any>) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStoreState>((set, get) => ({
@@ -181,5 +187,130 @@ export const useTaskStore = create<TaskStoreState>((set, get) => ({
     );
     
     set({ filteredTasks: filtered });
+  },
+  // Task control actions
+  pauseTask: async (taskId) => {
+    set({ loading: true, error: null });
+    
+    try {
+      const updatedTask = await apiService.pauseTask(taskId);
+      
+      // Update the task in the tasks array
+      set((state) => ({
+        tasks: state.tasks.map(task => 
+          task.id === taskId ? updatedTask : task
+        ),
+        loading: false
+      }));
+      
+      // Apply any existing filters
+      get().applyFilters();
+    } catch (error) {
+      console.error('Error pausing task:', error);
+      set({ 
+        error: 'Failed to pause task. Please try again later.',
+        loading: false 
+      });
+    }
+  },
+  
+  resumeTask: async (taskId) => {
+    set({ loading: true, error: null });
+    
+    try {
+      const updatedTask = await apiService.resumeTask(taskId);
+      
+      // Update the task in the tasks array
+      set((state) => ({
+        tasks: state.tasks.map(task => 
+          task.id === taskId ? updatedTask : task
+        ),
+        loading: false
+      }));
+      
+      // Apply any existing filters
+      get().applyFilters();
+    } catch (error) {
+      console.error('Error resuming task:', error);
+      set({ 
+        error: 'Failed to resume task. Please try again later.',
+        loading: false 
+      });
+    }
+  },
+  
+  rejectTask: async (taskId, reason) => {
+    set({ loading: true, error: null });
+    
+    try {
+      const updatedTask = await apiService.rejectTask(taskId, reason);
+      
+      // Update the task in the tasks array
+      set((state) => ({
+        tasks: state.tasks.map(task => 
+          task.id === taskId ? updatedTask : task
+        ),
+        loading: false
+      }));
+      
+      // Apply any existing filters
+      get().applyFilters();
+    } catch (error) {
+      console.error('Error rejecting task:', error);
+      set({ 
+        error: 'Failed to reject task. Please try again later.',
+        loading: false 
+      });
+    }
+  },
+  
+  editTask: async (taskId, parameters) => {
+    set({ loading: true, error: null });
+    
+    try {
+      const updatedTask = await apiService.editTask(taskId, parameters);
+      
+      // Update the task in the tasks array
+      set((state) => ({
+        tasks: state.tasks.map(task => 
+          task.id === taskId ? updatedTask : task
+        ),
+        loading: false
+      }));
+      
+      // Apply any existing filters
+      get().applyFilters();
+    } catch (error) {
+      console.error('Error editing task:', error);
+      set({ 
+        error: 'Failed to edit task. Please try again later.',
+        loading: false 
+      });
+    }
+  },
+  
+  approveTask: async (taskId, approvalData = {}) => {
+    set({ loading: true, error: null });
+    
+    try {
+      const updatedTask = await apiService.approveTask(taskId, approvalData);
+      
+      // Update the task in the tasks array
+      set((state) => ({
+        tasks: state.tasks.map(task => 
+          task.id === taskId ? updatedTask : task
+        ),
+        loading: false
+      }));
+      
+      // Apply any existing filters
+      get().applyFilters();
+    } catch (error) {
+      console.error('Error approving task:', error);
+      set({ 
+        error: 'Failed to approve task. Please try again later.',
+        loading: false 
+      });
+    }
   }
 }));

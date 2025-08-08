@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect,useState } from 'react';
 import {
   Send,
   MessageSquare,
@@ -13,14 +13,147 @@ import {
   Sparkles,
   Activity,
   X,
-  FileText
+  FileText,
+  Pause,
+  
+  Play,
+  Edit,
+  ThumbsDown,
+  Check,
+  Monitor,
+  Eye
 } from 'lucide-react';
+import { apiService } from '../services/apiService';
 import type { Message } from '../types'; // Assuming you've moved the interfaces to a types file
 import { useQueryStore } from '../stores/queryStore';
+import { ScreenshotViewer } from '../components/ScreenshotViewer';
 
+// Add a TaskControlModal component
+const TaskControlModal = ({ 
+  mode, 
+  taskId, 
+  onClose, 
+  onSubmit, 
+  taskData 
+}: { 
+  mode: 'edit' | 'reject', 
+  taskId: string, 
+  onClose: () => void, 
+  onSubmit: (data: any) => void,
+  taskData?: any
+}) => {
+  console.log("control modal", taskData)
+  const [reason, setReason] = useState('');
+  // Initialize with empty object if no parameters exist
+  const initialParameters = (mode === 'edit' && taskData?.parameters) 
+    ? {...taskData.parameters} 
+    : {};
+  const [parameters, setParameters] = useState<Record<string, any>>(initialParameters);
+  
+  // Initialize parameters from task data if in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && taskData?.parameters) {
+       console.log("Updating parameters from task data:", taskData.parameters);
+     setParameters(prevParams => {
+        // Only update if the parameters are different
+        const paramsChanged = JSON.stringify(prevParams) !== JSON.stringify(taskData.parameters);
+        return paramsChanged ? {...taskData.parameters} : prevParams;
+      });
+    }
+  }, [mode]);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mode === 'reject') {
+      onSubmit({ reason });
+    } else {
+      onSubmit({ parameters });
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-medium">
+            {mode === 'edit' ? 'Edit Task Parameters' : 'Reject Task'}
+          </h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          {mode === 'reject' ? (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason for Rejection
+              </label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                rows={4}
+                placeholder="Please provide a reason for rejecting this task..."
+                required
+              />
+            </div>
+          ) : (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Task Parameters
+              </label>
+              <div className="space-y-3">
+                {Object.entries(parameters).map(([key, value]) => (
+                  <div key={key}>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {key}
+                    </label>
+                    <input
+                      type="text"
+                      value={String(value)}
+                      onChange={(e) => setParameters({
+                        ...parameters,
+                        [key]: e.target.value
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                mode === 'edit' 
+                  ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' 
+                  : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+              }`}
+            >
+              {mode === 'edit' ? 'Save Changes' : 'Reject Task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 export default function NaturalLanguageQuery() {
   // Use the query store instead of local state
-  const {
+ const {
     messages,
     input,
     isLoading,
@@ -29,12 +162,30 @@ export default function NaturalLanguageQuery() {
     activeLogTaskId,
     showLogsModal,
     taskLogs,
+    showTaskControlModal,
+    activeControlTaskId,
+    taskControlMode,
+  
     setInput,
     executeQuery,
     copyToClipboard,
     openLogsModal,
-    closeLogsModal
+    closeLogsModal,
+    openTaskControlModal,
+    closeTaskControlModal,
+    pauseTask,
+    resumeTask,
+    rejectTask,
+    editTask,
+   approveTask,
+    cancelTask
+
   } = useQueryStore();
+
+  // State for screenshot viewer
+  const [showScreenshotViewer, setShowScreenshotViewer] = useState(false);
+  const [screenshotTaskId, setScreenshotTaskId] = useState<string | null>(null);
+  const [websocket, setWebsocket] = useState<WebSocket | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -50,11 +201,29 @@ export default function NaturalLanguageQuery() {
       // logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [taskLogs, showLogsModal]);
-
+ useEffect(() => {
+    // Debug log to check messages and task data
+    console.log('Messages updated:', messages);
+    messages.forEach(msg => {
+      if (msg.taskData) {
+        console.log(`Message ${msg.id} has task data:`, msg.taskData);
+        console.log(`Task status: ${msg.taskData.current_state?.status}`);
+        console.log(`Requires approval: ${msg.taskData.current_state?.requires_approval}`);
+      }
+    });
+  }, [messages]);
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
+// Add new handleCancelTask function
+const handleCancelTask = async (taskId: string) => {
+  try {
+    console.log('Cancelling task:', taskId);
+    await cancelTask(taskId);
+  } catch (error) {
+    console.error('Failed to cancel task:', error);
+  }
+};
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -82,6 +251,164 @@ export default function NaturalLanguageQuery() {
     return 'text-red-600';
   };
 
+ 
+  // Handle task control actions
+  const handlePauseTask = async (taskId: string) => {
+    try {
+         console.log('Pausing task:', taskId);
+      await pauseTask(taskId);
+    } catch (error) {
+      console.error('Failed to pause task:', error);
+    }
+  };
+
+  const handleResumeTask = async (taskId: string) => {
+    try {
+       console.log('Resuming task:', taskId);
+      await resumeTask(taskId);
+    } catch (error) {
+      console.error('Failed to resume task:', error);
+    }
+  };
+
+  const handleApproveTask = async (taskId: string) => {
+    try {
+      console.log('Approving task:', taskId);
+      await approveTask(taskId);
+    } catch (error) {
+      console.error('Failed to approve task:', error);
+    }
+  };
+
+  const handleRejectSubmit = async (data: { reason: string }) => {
+    if (!activeControlTaskId) return;
+    
+    try {
+      await rejectTask(activeControlTaskId, data.reason);
+    } catch (error) {
+      console.error('Failed to reject task:', error);
+    }
+  };
+
+  const handleEditSubmit = async (data: { parameters: Record<string, any> }) => {
+    if (!activeControlTaskId) return;
+    
+    try {
+      await editTask(activeControlTaskId, data.parameters);
+    } catch (error) {
+      console.error('Failed to edit task:', error);
+    }
+  };
+
+  // Get the active task data for the control modal
+  const getActiveTaskData = () => {
+    if (!activeControlTaskId) return null;
+    
+  
+     console.log('Getting task data for:', activeControlTaskId);
+    console.log('Available messages:', messages.length);
+    
+    const taskMessage = messages.find(msg => 
+      msg.taskId === activeControlTaskId || 
+      (msg.taskData && msg.taskData.id === activeControlTaskId)
+    );
+    
+    console.log('Found message with task data:', taskMessage);
+    // Make sure we're returning the full task data with parameters
+    if (taskMessage?.taskData) {
+      console.log('Task parameters:', taskMessage.taskData.current_state.parameters);
+      return taskMessage.taskData;}
+      // If we can't find the task data in messages, try to find it in AI responses
+    const aiMessage = messages.find(msg => 
+      msg.sender === 'ai' && 
+      msg.taskData && 
+      msg.taskData.id === activeControlTaskId
+    );
+    
+    if (aiMessage?.taskData) {
+      console.log('Found task data in AI message:', aiMessage.taskData.current_state.parameters);
+      return aiMessage.taskData;
+    }
+      return null
+  };
+
+  // Render task control buttons based on task status
+  const renderTaskControls = (message: Message) => {
+    console.log('Rendering task controls for message:', message.id);
+     if (!message.taskData) {
+      console.log('No task data for message:', message.id);
+      return null;
+    }
+    
+    const taskId = message.taskData.id;
+    const status = message.taskData.current_state.status;
+    const requiresApproval = message.taskData.current_state.requires_approval;
+//  console.log('Task controls for:', taskId, 'Status:', status, 'Requires approval:', requiresApproval);
+//     console.log('Full task data:', JSON.stringify(message.taskData, null, 2));
+     // Don't show controls for completed or failed tasks
+  if (status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELED') {
+    return null;
+  }
+    return (
+      <div className="flex flex-wrap gap-2 mt-2">
+        {/* cancel button - show when task is running */}
+        {status === 'RUNNING' && (
+          <button
+            onClick={() => handleCancelTask(taskId)}
+            className="flex items-center gap-1 text-xs text-yellow-600 hover:text-yellow-800 px-2 py-1 bg-yellow-50 rounded-md transition-colors"
+          >
+            <X className="w-3 h-3" />
+            Cancel
+          </button>
+        )}
+        
+        {/* Resume button - show when task is paused and doesn't require approval */}
+        {status === 'PAUSED' && !requiresApproval && (
+          <button
+            onClick={() => handleResumeTask(taskId)}
+            className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 px-2 py-1 bg-green-50 rounded-md transition-colors"
+          >
+            <Play className="w-3 h-3" />
+            Resume
+          </button>
+        )}
+        
+        {/* Approve button - show when task requires approval */}
+        {status === 'PAUSED' && requiresApproval && (
+          <button
+            onClick={() => handleApproveTask(taskId)}
+            className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 px-2 py-1 bg-green-50 rounded-md transition-colors"
+          >
+            <Check className="w-3 h-3" />
+            Approve
+          </button>
+        )}
+        
+        {/* Edit button - show when task is paused */}
+        {status === 'PAUSED' && (
+          <button
+            onClick={() => openTaskControlModal(taskId, 'edit')}
+            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded-md transition-colors"
+          >
+            <Edit className="w-3 h-3" />
+            Edit
+          </button>
+        )}
+        
+        {/* Reject button - show when task is paused */}
+        {status === 'PAUSED' && (
+          <button
+            onClick={() => openTaskControlModal(taskId, 'reject')}
+            className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 px-2 py-1 bg-red-50 rounded-md transition-colors"
+          >
+            <ThumbsDown className="w-3 h-3" />
+            Reject
+          </button>
+        )}
+      </div>
+    );
+  };
+
   const renderMessage = (message: Message) => (
     <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-[80%] rounded-lg p-4 ${
@@ -89,7 +416,7 @@ export default function NaturalLanguageQuery() {
           ? 'bg-blue-600 text-white' 
           : 'bg-gray-100 text-gray-900'
       }`}>
-      {message.isProcessing ? (
+      {message.isProcessing && message.sender === 'ai' ? (
         <div>
           <div className="flex items-center space-x-2">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -97,93 +424,117 @@ export default function NaturalLanguageQuery() {
           </div>
           {/* Add View Logs button for processing messages */}
           {message.taskData?.id && (
-            <button
-              onClick={() => message.taskData?.id && openLogsModal(message.taskData.id)}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2 px-2 py-1 bg-blue-50 rounded-md transition-colors"
-            >
-              <FileText className="w-3 h-3" />
-              View Logs
-            </button>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <button
+                onClick={() => message.taskData?.id && openLogsModal(message.taskData.id)}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded-md transition-colors"
+              >
+                <FileText className="w-3 h-3" />
+                View Logs
+              </button>
+              {/* Screenshots button - show for all active tasks */}
+              {message.taskData.current_state?.status && 
+                   !['COMPLETED', 'FAILED', 'CANCELED'].includes(message.taskData.current_state.status) && (
+                    <button
+                      onClick={() => {
+                        console.log('Opening screenshot viewer for task:', message.taskData!.id, 'Status:', message.taskData!.current_state?.status);
+                        setScreenshotTaskId(message.taskData!.id);
+                        setShowScreenshotViewer(true);
+                      }}
+                      className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 px-2 py-1 bg-purple-50 rounded-md transition-colors"
+                    >
+                      <Monitor className="w-3 h-3" />
+                      Screenshots
+                    </button>
+                  )}
+              {/* Add pause button for running tasks */}
+              {message.taskData.current_state?.status === 'RUNNING' && (
+                <button
+                  onClick={() => message.taskData?.id && handleCancelTask(message.taskData.id)}
+                  className="flex items-center gap-1 text-xs text-yellow-600 hover:text-yellow-800 px-2 py-1 bg-yellow-50 rounded-md transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Cancel
+                </button>
+              )}
+            </div>
           )}
         </div>
       ) : (
         <div>
           <div className="whitespace-pre-wrap">{message.text}</div>
-          
+         
           {/* Display additional task information for AI responses */}
-          {message.sender === 'ai' && message.response && (
+          {message.sender === 'ai' && message.taskData && (
             <div className="mt-3 pt-3 border-t border-gray-200">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {message.response.intent && (
-                  <div className="col-span-2">
-                    <span className="font-medium text-gray-700">Intent:</span> 
-                    <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded">{message.response.intent}</span>
-                  </div>
-                )}
-                
-                {message.response.confidence && (
-                  <div>
-                    <span className="font-medium text-gray-700">Confidence:</span> 
-                    <span className={`ml-1 ${getConfidenceColor(message.response.confidence)}`}>
-                      {Math.round(message.response.confidence * 100)}%
-                    </span>
-                  </div>
-                )}
-                
-                {message.taskData?.current_state?.status && (
-                  <div>
-                    <span className="font-medium text-gray-700">Status:</span> 
-                    <span className={`ml-1 px-1.5 py-0.5 rounded text-xs ${
-                      message.taskData.current_state.status === 'COMPLETED' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {message.taskData.current_state.status}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Display tool information if available */}
-                {message.taskData?.tools && message.taskData.tools.length > 0 && (
-                  <div className="col-span-2 mt-1">
-                    <span className="font-medium text-gray-700">Tool:</span> 
-                    <span className="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded">
-                      {message.taskData.tools[0].name}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              {/* Display parameters if available */}
-              {message.response.parameters && Object.keys(message.response.parameters).length > 0 && (
-                <div className="mt-2">
-                  <div className="font-medium text-xs text-gray-700 mb-1">Parameters:</div>
-                  <div className="bg-gray-50 p-2 rounded text-xs">
-                    {Object.entries(message.response.parameters)
-                      .filter(([key]) => key !== 'password') // Don't display passwords
-                      .map(([key, value]) => (
-                        <div key={key} className="grid grid-cols-3 gap-2 mb-1">
-                          <div className="font-medium text-gray-600">{key}:</div>
-                          <div className="col-span-2 text-gray-800">{String(value)}</div>
-                        </div>
-                      ))
-                    }
-                  </div>
+              {message.response && (
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {message.response.intent && (
+                    <div className="col-span-2">
+                      <span className="font-medium text-gray-700">Intent:</span> 
+                      <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded">{message.response.intent}</span>
+                    </div>
+                  )}
+                  
+                  {message.response?.confidence && (
+                    <div>
+                      <span className="font-medium text-gray-700">Confidence:</span> 
+                      <span className={`ml-1 ${getConfidenceColor(message.response.confidence)}`}>
+                        {Math.round(message.response.confidence * 100)}%
+                      </span>
+                    </div>
+                  )}
+                  
+                  {message.taskData.current_state?.status && (
+                    <div>
+                      <span className="font-medium text-gray-700">Status:</span> 
+                      <span className={`ml-1 px-1.5 py-0.5 rounded text-xs ${
+                        message.taskData.current_state.status === 'COMPLETED' 
+                          ? 'bg-green-100 text-green-800' 
+                          : message.taskData.current_state.status === 'RUNNING'
+                          ? 'bg-blue-100 text-blue-800'
+                          : message.taskData.current_state.status === 'PAUSED'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : message.taskData.current_state.status === 'FAILED'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {message.taskData.current_state.status}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
               
-              {/* Display outputs if available */}
-              {message.response.outputs && Object.keys(message.response.outputs).length > 0 && (
-                <div className="mt-2">
-                  <div className="font-medium text-xs text-gray-700 mb-1">Results:</div>
-                  <div className="bg-gray-50 p-2 rounded text-xs">
-                    {Object.entries(message.response.outputs).map(([key, value]) => (
-                      <div key={key} className="grid grid-cols-3 gap-2 mb-1">
-                        <div className="font-medium text-gray-600">{key}:</div>
-                        <div className="col-span-2 text-gray-800">{String(value)}</div>
-                      </div>
-                    ))}
-                  </div>
+              {/* Add task control buttons */}
+              {renderTaskControls(message)}
+              
+              {/* Add View Logs button */}
+              {message.taskData?.id && (
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => message.taskData?.id && openLogsModal(message.taskData.id)}
+                    className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 px-2 py-1 bg-blue-50 rounded-md transition-colors"
+                  >
+                    <FileText className="w-3 h-3" />
+                    View Execution Logs
+                  </button>
+                  
+                  {/* Screenshots button - show for all active tasks */}
+                  {message.taskData.current_state?.status && 
+                   !['COMPLETED', 'FAILED', 'CANCELED'].includes(message.taskData.current_state.status) && (
+                    <button
+                      onClick={() => {
+                        console.log('Opening screenshot viewer for task:', message.taskData!.id, 'Status:', message.taskData!.current_state?.status);
+                        setScreenshotTaskId(message.taskData!.id);
+                        setShowScreenshotViewer(true);
+                      }}
+                      className="flex items-center gap-1 text-xs text-purple-600 hover:text-purple-800 px-2 py-1 bg-purple-50 rounded-md transition-colors"
+                    >
+                      <Monitor className="w-3 h-3" />
+                      Screenshots
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -198,27 +549,63 @@ export default function NaturalLanguageQuery() {
               </div>
             </div>
           )}
-          {/* Add View Logs button for completed messages too */}
-          {message.taskData?.id && (
-            <button
-              onClick={() => message.taskData?.id && openLogsModal(message.taskData.id)}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2 px-2 py-1 bg-blue-50 rounded-md transition-colors"
-            >
-              <FileText className="w-3 h-3" />
-              View Execution Logs
-            </button>
-          )}
         </div>
       )}
       </div>
     </div>
   );
-  
+      
+      
+
+
+ 
   return (
     <div className="min-h-screen lg:ml-60 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Background Pattern */}
       <div className="absolute inset-0 bg-grid-slate-100/50 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.8))] -z-10"></div>
+     {/* Task Control Modal */}
+      {showTaskControlModal && activeControlTaskId && taskControlMode && (
+        <TaskControlModal
+          mode={taskControlMode}
+          taskId={activeControlTaskId}
+          onClose={closeTaskControlModal}
+          onSubmit={taskControlMode === 'edit' ? handleEditSubmit : handleRejectSubmit}
+          taskData={getActiveTaskData()}
+        />
+      )}
       
+      {/* Screenshot Viewer Modal */}
+      {showScreenshotViewer && screenshotTaskId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-purple-600" />
+                <h3 className="text-lg font-medium">Live Screenshots</h3>
+                <span className="text-sm text-gray-500">Task: {screenshotTaskId}</span>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowScreenshotViewer(false);
+                  setScreenshotTaskId(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-hidden">
+              <ScreenshotViewer
+                taskId={screenshotTaskId}
+                autoConnect={true}
+                maxScreenshots={15}
+                className="h-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-screen flex flex-col">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
@@ -603,6 +990,7 @@ export default function NaturalLanguageQuery() {
           </div>
         )}
       </div>
+       
     </div>
   );
 }

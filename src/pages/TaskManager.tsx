@@ -13,10 +13,12 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
-  Terminal
+  Terminal,
+  Eye
 } from 'lucide-react';
 import { useTaskStore } from '../stores/taskStore';
 import { format, parseISO } from 'date-fns';
+import TaskDetailsModal from '../components/TaskDetailsModal';
 
 export default function TaskManager() {
   const {
@@ -37,7 +39,32 @@ export default function TaskManager() {
   } = useTaskStore();
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+
+    // Add new state to track which dropdown is open
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  
+  // Toggle dropdown visibility
+  const toggleDropdown = (taskId: string) => {
+    if (openDropdownId === taskId) {
+      setOpenDropdownId(null);
+    } else {
+      setOpenDropdownId(taskId);
+    }
+  };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenDropdownId(null);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, []);
   // Fetch tasks on component mount
   useEffect(() => {
     fetchTasks();
@@ -54,7 +81,17 @@ export default function TaskManager() {
     setCurrentPage(1);
     fetchTasks(1);
   };
+ // Open task details modal
+  const openTaskDetails = (task: Task) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
+  };
 
+  // Close task details modal
+  const closeTaskDetails = () => {
+    setIsModalOpen(false);
+    setSelectedTask(null);
+  };
   // Format date for display
   const formatDate = (dateString: string) => {
     try {
@@ -318,11 +355,35 @@ export default function TaskManager() {
                       <td className="px-4 py-3 text-xs text-gray-500">
                         {formatDate(task.current_state.updated_at)}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end items-center gap-1">
-                          <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-colors">
+                     
+                       <td className="px-4 py-3 text-right">
+                        <div className="flex justify-end items-center gap-1 relative">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent the outside click handler
+                              toggleDropdown(task.id);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-colors"
+                          >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
+                          
+                          {/* Dropdown Menu */}
+                          {openDropdownId === task.id && (
+                            <div className="absolute right-0 top-8 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                              <button
+                                onClick={() => {
+                                  openTaskDetails(task);
+                                  setOpenDropdownId(null);
+                                }}
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                <Eye className="w-4 h-4 mr-2 text-blue-500" />
+                                View Details
+                              </button>
+                              {/* Add more dropdown options here as needed */}
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -375,6 +436,11 @@ export default function TaskManager() {
           )}
         </div>
       </div>
+       <TaskDetailsModal 
+        task={selectedTask}
+        isOpen={isModalOpen}
+        onClose={closeTaskDetails}
+      />
     </div>
   );
 }

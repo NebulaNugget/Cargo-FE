@@ -1,7 +1,20 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export interface Screenshot {
+  filename: string;
+  path: string;
+  size_bytes: number;
+  created_at: string;
+  download_url: string;
+}
 
+export interface TaskScreenshotsResponse {
+  task_id: string;
+  screenshots: Screenshot[];
+  total_count: number;
+  message?: string;
+}
 // Mock data for fallback
 const mockData = {
   logs: [
@@ -224,7 +237,7 @@ class ApiService {
       throw error;
     }
   }
-
+private token = localStorage.getItem('token') || null;
  // Natural Language Query - updated to match backend
   async executeQuery(query: string, context: Record<string, any> = {}): Promise<QueryResponse> {
     try {
@@ -360,7 +373,24 @@ class ApiService {
       return { success: true };
     }
   }
+  setupWebSocketForTask(onMessage: (data: any) => void): WebSocket | null{
+  try {
+    const ws = new WebSocket(`${API_BASE_URL.replace('http', 'ws')}/api/v1/task/${this.token}`)
+    ws.onmessage = (event) => {
+      console.log(event)
+      const data = JSON.parse(event.data)
+      onMessage(data)
+    }
 
+    ws.onerror=(error)=> {
+     console.log(error) 
+    }
+    return ws
+  } catch (error) {
+
+    return null
+  }
+}
   // WebSocket connection for real-time updates
   setupWebSocket(onMessage: (data: any) => void): WebSocket | null {
     try {
@@ -371,6 +401,7 @@ class ApiService {
         console.log(data)
         onMessage(data);
       };
+
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
@@ -399,6 +430,7 @@ class ApiService {
       });
     }, 5000);
   }
+
    // Add new method to get dashboard stats
   async getDashboardStats(userId?: string, clientId?: string): Promise<DashboardStats | undefined> {
     try {
@@ -418,7 +450,65 @@ class ApiService {
       
     }
   }
+ // Add methods for task control actions
+  async pauseTask(taskId: string): Promise<Task> {
+     console.log('API Service: Pausing task', taskId);
+    try {
+      return await this.request<Task>(`/api/v1/tasks/${taskId}/cancel`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Failed to pause task:', error);
+      throw error;
+    }
+  }
 
+  async resumeTask(taskId: string): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/v1/tasks/${taskId}/resume`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Failed to resume task:', error);
+      throw error;
+    }
+  }
+
+  async rejectTask(taskId: string, reason: string): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/v1/tasks/${taskId}/reject`, {
+        method: 'POST',
+        data: { reason }
+      });
+    } catch (error) {
+      console.error('Failed to reject task:', error);
+      throw error;
+    }
+  }
+
+  async editTask(taskId: string, parameters: Record<string, any>): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/v1/tasks/${taskId}/edit`, {
+        method: 'POST',
+        data: { parameters }
+      });
+    } catch (error) {
+      console.error('Failed to edit task:', error);
+      throw error;
+    }
+  }
+
+  async approveTask(taskId: string, approvalData: Record<string, any> = {}): Promise<Task> {
+    try {
+      return await this.request<Task>(`/api/v1/tasks/${taskId}/approve`, {
+        method: 'POST',
+        data: approvalData
+      });
+    } catch (error) {
+      console.error('Failed to approve task:', error);
+      throw error;
+    }
+  }
   // Add method to fetch tasks with pagination and filters
   async getTasks(params: {
     limit?: number;
@@ -426,7 +516,7 @@ class ApiService {
     status?: string;
     start_date?: string;
     end_date?: string;
-  } = {}): Promise<TasksResponse> {
+  } = {}): Promise<TasksResponse | undefined> {
     try {
       return await this.request<TasksResponse>('/api/v1/tasks', {
         method: 'GET',
@@ -438,6 +528,24 @@ class ApiService {
   
     }
   }
+
+// Add method to fetch task screenshots
+async getTaskScreenshots(taskId: string): Promise<TaskScreenshotsResponse> {
+  try {
+    return await this.request<TaskScreenshotsResponse>(`/api/v1/tasks/${taskId}/screenshots`, {
+      method: 'GET'
+    });
+  } catch (error) {
+    console.error('Failed to fetch task screenshots:', error);
+    throw error;
+  }
+}
+
+// Add method to get screenshot download URL
+getScreenshotUrl(taskId: string, filename: string): string {
+  return `${API_BASE_URL}/api/v1/tasks/${taskId}/screenshots/${filename}`;
+}
+
 }
 
 export const apiService = new ApiService(); 

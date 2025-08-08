@@ -27,20 +27,27 @@ export interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
-  timestamp: Date;
+  timestamp: number;
   isProcessing?: boolean;
-  error?: string | null;
-  taskData?: any; // TaskResult type
-  status?: string;
-  taskId?: string;
-  taskStatus?: string;
-  relatedUserMessageId?: string;
+  error?: string;
   response?: {
-    confidence: number;
-    latency: number;
     intent?: string;
+    confidence?: number;
     parameters?: Record<string, any>;
     outputs?: Record<string, any>;
+    latency?: number;
+  };
+  taskId?: string;
+  taskData?: {
+    id: string;
+    workflow_type: string;
+    current_state: {
+      status: string;
+      requires_approval: boolean;
+      parameters?: Record<string, any>;
+      // other properties
+    };
+    // other task properties
   };
 }
 

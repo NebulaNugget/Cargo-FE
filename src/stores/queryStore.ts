@@ -5,12 +5,17 @@ import type { Message, TaskLog, PendingTask } from '../types';
 interface QueryState {
   messages: Message[];
   input: string;
+
   isLoading: boolean;
   copiedMessageId: string | null;
   pendingTasks: PendingTask[];
   activeLogTaskId: string | null;
   showLogsModal: boolean;
   taskLogs: TaskLog[];
+  // Task control state
+  showTaskControlModal: boolean;
+  activeControlTaskId: string | null;
+  taskControlMode: 'edit' | 'reject' | null;
   
   // Actions
   setInput: (input: string) => void;
@@ -23,6 +28,17 @@ interface QueryState {
   closeLogsModal: () => void;
   fetchTaskLogs: (taskId: string) => Promise<void>;
   clearMessages: () => void;
+  // Task control actions
+  openTaskControlModal: (taskId: string, mode: 'edit' | 'reject') => void;
+  closeTaskControlModal: () => void;
+  pauseTask: (taskId: string) => Promise<void>;
+  resumeTask: (taskId: string) => Promise<void>;
+  rejectTask: (taskId: string, reason: string) => Promise<void>;
+  editTask: (taskId: string, parameters: Record<string, any>) => Promise<void>;
+  approveTask: (taskId: string) => Promise<void>;
+  // Add new cancelTask function
+  cancelTask: (taskId: string) => Promise<void>;
+
 }
 
 export const useQueryStore = create<QueryState>((set, get) => ({
@@ -34,6 +50,13 @@ export const useQueryStore = create<QueryState>((set, get) => ({
   activeLogTaskId: null,
   showLogsModal: false,
   taskLogs: [],
+   // Task control state
+  showTaskControlModal: false,
+  activeControlTaskId: null,
+  taskControlMode: null,
+
+
+
   
   setInput: (input) => set({ input }),
   
@@ -84,19 +107,33 @@ export const useQueryStore = create<QueryState>((set, get) => ({
       };
       get().addMessage(errorMessage);
     } finally {
+      
+  
       set({ isLoading: false });
     }
   },
-  
+  // Add these methods to your store
+
   pollTaskStatus: (taskId, messageId, userMessageId) => {
-    // Create a placeholder message for the pending response
+    // Create a placeholder message for the pending response with proper task data structure
+
     const placeholderMessage: Message = {
       id: messageId,
       text: 'Processing your query...',
       sender: 'ai',
       timestamp: new Date(),
       isProcessing: true,
-      taskData: { id: taskId } as any,
+      taskData: { 
+        id: taskId, 
+        current_state: { 
+          status: 'RUNNING',
+          requires_approval: false,
+          step_index: 0,
+          parameters: {},
+          outputs: {},
+          error: null
+        } 
+      } as any,
       relatedUserMessageId: userMessageId
     };
     
@@ -106,6 +143,21 @@ export const useQueryStore = create<QueryState>((set, get) => ({
     const interval = setInterval(async () => {
       try {
         const result = await apiService.getTaskResult(taskId);
+        console.log('Task polling result:', result);
+        
+        // Update the message with the latest task data even if still processing
+        get().updateMessage(messageId, {
+          taskData: result,
+        });
+      
+        
+        // If the task requires approval, update the message to show it's paused
+        if (result.current_state.status === 'PAUSED' && result.current_state.requires_approval) {
+          get().updateMessage(messageId, {
+            text: `I need your approval to proceed with this task. The confidence level is ${Math.round((result.context?.confidence || 0) * 100)}%.`,
+            isProcessing: false
+          });
+        }
         
         if (result.current_state.status === 'COMPLETED' || result.current_state.status === 'FAILED') {
           // Clear the interval
@@ -169,7 +221,7 @@ export const useQueryStore = create<QueryState>((set, get) => ({
       } catch (error) {
         console.error('Error polling task status:', error);
       }
-    }, 2000); // Poll every 2 seconds
+    }, 4000); // Poll every 2 seconds
     
     // Add to pending tasks
     set((state) => ({
@@ -181,6 +233,7 @@ export const useQueryStore = create<QueryState>((set, get) => ({
       }]
     }));
   },
+ 
   
   copyToClipboard: async (text, messageId) => {
     try {
@@ -567,5 +620,244 @@ export const useQueryStore = create<QueryState>((set, get) => ({
     }
   },
   
-  clearMessages: () => set({ messages: [] })
+ 
+  // Task control actions
+  openTaskControlModal: (taskId, mode) => {
+    set({ 
+      showTaskControlModal: true, 
+      activeControlTaskId: taskId,
+      taskControlMode: mode
+    });
+  },
+  
+  closeTaskControlModal: () => {
+    set({ 
+      showTaskControlModal: false, 
+      activeControlTaskId: null,
+      taskControlMode: null
+    });
+  },
+  
+  pauseTask: async (taskId: string) => {
+    try {
+      const updatedTask = await apiService.pauseTask(taskId);
+      
+      // Update any messages that reference this task
+      set((state) => ({
+        messages: state.messages.map(msg => 
+          msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+            ? { 
+                ...msg, 
+                taskData: updatedTask,
+                status: updatedTask.current_state.status
+              }
+            : msg
+        )
+      }));
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error pausing task:', error);
+      throw error;
+    }
+  },
+  
+  resumeTask: async (taskId: string): Promise<void> => {
+    try {
+      const updatedTask = await apiService.resumeTask(taskId);
+      
+      // Update any messages that reference this task
+      set((state) => ({
+        messages: state.messages.map(msg => 
+          msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+            ? { 
+                ...msg, 
+                taskData: updatedTask,
+                status: updatedTask.current_state.status,
+                isProcessing: updatedTask.current_state.status === 'RUNNING'
+              }
+            : msg
+        )
+      }));
+      
+      // If the task is now running, we should start polling again
+      if (updatedTask.current_state.status === 'RUNNING') {
+        const message = get().messages.find(m => 
+          m.taskId === taskId || (m.taskData && m.taskData.id === taskId)
+        );
+        
+        if (message && message.relatedUserMessageId) {
+          // Start polling again
+          get().pollTaskStatus(taskId, message.id, message.relatedUserMessageId);
+        }
+      }
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error resuming task:', error);
+      throw error;
+    }
+  },
+  
+  rejectTask: async (taskId: string, reason: string): Promise<void> => {
+    try {
+      const updatedTask = await apiService.rejectTask(taskId, reason);
+      
+      // Update any messages that reference this task
+      set((state) => ({
+        messages: state.messages.map(msg => 
+          msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+            ? { 
+                ...msg, 
+                taskData: updatedTask,
+                status: updatedTask.current_state.status,
+                isProcessing: false
+              }
+            : msg
+        ),
+        showTaskControlModal: false,
+        activeControlTaskId: null,
+        taskControlMode: null
+      }));
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error rejecting task:', error);
+      throw error;
+    }
+  },
+  
+  editTask: async (taskId: string, parameters: any): Promise<void> => {
+    try {
+      const updatedTask = await apiService.editTask(taskId, parameters);
+      
+      // Update any messages that reference this task
+      set((state) => ({
+        messages: state.messages.map(msg => 
+          msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+            ? { 
+                ...msg, 
+                taskData: updatedTask,
+                status: updatedTask.current_state.status
+              }
+            : msg
+        ),
+        showTaskControlModal: false,
+        activeControlTaskId: null,
+        taskControlMode: null
+      }));
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error editing task:', error);
+      throw error;
+    }
+  },
+  
+  approveTask: async (taskId: string): Promise<void>=> {
+    try {
+      console.log('Approving task:', taskId);
+      const updatedTask = await apiService.approveTask(taskId);
+      
+      // Update any messages that reference this task
+      set((state) => ({
+        messages: state.messages.map(msg => 
+          msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+            ? { 
+                ...msg, 
+                taskData: updatedTask,
+                status: updatedTask.current_state.status,
+                isProcessing: false
+              }
+            : msg
+        )
+      }));
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error approving task:', error);
+      throw error;
+    }
+  },
+
+  // Add new cancelTask function
+  cancelTask: async (taskId: string): Promise<void> => {
+    try {
+      console.log('Cancelling task:', taskId);
+      
+      // First, clear the polling interval to stop status checks
+      const { pendingTasks } = get();
+      const task = pendingTasks.find(t => t.taskId === taskId);
+      
+      if (task) {
+        // Clear the main polling interval
+        if (task.pollingInterval) {
+          clearInterval(task.pollingInterval);
+        }
+        
+        // Clear the log polling interval if it exists
+        if (task.logPollingInterval) {
+          clearInterval(task.logPollingInterval);
+        }
+        
+        // Remove the task from pending tasks
+        set((state) => ({
+          pendingTasks: state.pendingTasks.filter(t => t.taskId !== taskId)
+        }));
+      }
+      
+      // Call the API to pause/cancel the task
+      const updatedTask = await apiService.pauseTask(taskId);
+      
+      // Update any messages that reference this task
+      set((state) => ({
+        messages: state.messages.map(msg => 
+          msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+            ? { 
+                ...msg, 
+                taskData: updatedTask,
+                status: updatedTask.current_state.status,
+                isProcessing: false,
+                text: msg.isProcessing ? 'Task has been cancelled.' : msg.text
+              }
+            : msg
+        ),
+        isLoading: false // Stop the loading state
+      }));
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error cancelling task:', error);
+      
+      // Even if the API call fails, we should stop the polling and update the UI
+      const { pendingTasks } = get();
+      const task = pendingTasks.find(t => t.taskId === taskId);
+      
+      if (task) {
+        if (task.pollingInterval) {
+          clearInterval(task.pollingInterval);
+        }
+        if (task.logPollingInterval) {
+          clearInterval(task.logPollingInterval);
+        }
+        
+        set((state) => ({
+          pendingTasks: state.pendingTasks.filter(t => t.taskId !== taskId),
+          messages: state.messages.map(msg => 
+            msg.taskId === taskId || (msg.taskData && msg.taskData.id === taskId)
+              ? { 
+                  ...msg, 
+                  isProcessing: false,
+                  text: msg.isProcessing ? 'Task cancellation failed, but polling stopped.' : msg.text,
+                  error: 'Failed to cancel task on server'
+                }
+              : msg
+          ),
+          isLoading: false
+        }));
+      }
+      
+      throw error;
+    }
+  }
 }));

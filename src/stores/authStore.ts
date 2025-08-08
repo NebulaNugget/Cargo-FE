@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService } from '../services/authService';
+import { apiService } from '../services/apiService';
 import type { User, UserRole } from '../types';
 
 // Define the registration data type
@@ -19,6 +20,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+
   
   // Actions
   login: (username: string, password: string) => Promise<void>;
@@ -38,6 +40,8 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      // Add this to your initial state
+
       
       login: async (username: string, password: string) => {
         set({ isLoading: true, error: null });
@@ -47,7 +51,7 @@ export const useAuthStore = create<AuthState>()(
           
           // Store token in localStorage for immediate access
           localStorage.setItem('access_token', token);
-          
+      
           set({ 
             user: {
               ...user,
@@ -56,7 +60,8 @@ export const useAuthStore = create<AuthState>()(
             token, 
             isAuthenticated: true, 
             isLoading: false,
-            error: null
+            error: null,
+          
           });
         } catch (error: any) {
           // Clear any existing token on login failure
@@ -81,26 +86,31 @@ export const useAuthStore = create<AuthState>()(
             await authService.logout();
           }
           
-          // Clear localStorage
-          localStorage.removeItem('access_token');
+   
+    
+    // Clear localStorage
+    localStorage.removeItem('access_token');
           
           set({ 
             user: null, 
             token: null, 
             isAuthenticated: false, 
             isLoading: false,
-            error: null
+            error: null,
+          
           });
         } catch (error: any) {
           // Even if logout fails, clear local state
           localStorage.removeItem('access_token');
+       
           
           set({ 
             user: null, 
             token: null, 
             isAuthenticated: false, 
             error: error.message || 'Logout failed', 
-            isLoading: false 
+            isLoading: false,
+        
           });
         }
       },
